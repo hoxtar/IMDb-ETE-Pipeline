@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # IMDb-ETE-Pipeline
 
 ## **Project goal**
@@ -30,3 +31,6 @@
   - docker/ (Dockerfiles, docker-compose.yml)
 
 **Next steps**
+=======
+# IMDb-ETE-Pipeline
+>>>>>>> fcd0d0a (Initial commit)
