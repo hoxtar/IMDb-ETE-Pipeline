@@ -33,4 +33,3 @@
 **Next steps**
 =======
 # IMDb-ETE-Pipeline
->>>>>>> fcd0d0a (Initial commit)
