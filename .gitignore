@@ -1,0 +1,27 @@
+# Python bytecode and cache files
+*.py[cod]
+__pycache__/
+
+# Virtual environment folders (if using virtualenv, venv, etc.)
+env/
+venv/
+*.egg-info/
+
+# Environment variables file (contains sensitive data)
+.env
+
+# Airflow logs and general log files
+airflow-logs/
+*.log
+
+# Build output folders (if applicable)
+build/
+dist/
+
+
+# IDE/Editor settings (e.g., Visual Studio Code)
+.vscode/
+
+# System files
+.DS_Store
+Thumbs.db
