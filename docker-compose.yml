@@ -9,6 +9,21 @@ services:
     ports:
       - "5434:5432"
 
+  airflow-init:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: ./scripts/airflow-entrypoint.sh
+    command: version
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./airflow-logs:/opt/airflow/logs
+      - ./scripts:/opt/airflow/scripts
+
   scheduler:
     build:
       context: .
