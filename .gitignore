@@ -18,10 +18,12 @@ airflow-logs/
 build/
 dist/
 
-
 # IDE/Editor settings (e.g., Visual Studio Code)
 .vscode/
 
 # System files
 .DS_Store
 Thumbs.db
+
+# First downloaded file with DAG for locally test purpose
+echo "dags/files/title.basics.tsv.gz" >> .gitignore
