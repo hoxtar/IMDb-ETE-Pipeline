@@ -26,4 +26,5 @@ dist/
 Thumbs.db
 
 # First downloaded file with DAG for locally test purpose
-echo "dags/files/title.basics.tsv.gz"
+dags/files/title.basics.tsv.gz
+
