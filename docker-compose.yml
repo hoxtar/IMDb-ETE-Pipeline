@@ -1,4 +1,4 @@
-version: "2.1"
+
 services:
   postgres:
     image: postgres:12
@@ -21,6 +21,7 @@ services:
       - .env
     volumes:
       - ./dags:/opt/airflow/dags
+      - ./config/security:/opt/airflow/config/security 
       - ./airflow-logs:/opt/airflow/logs
       - ./scripts:/opt/airflow/scripts
 
@@ -39,6 +40,7 @@ services:
       - "8794:8793"
     volumes:
       - ./dags:/opt/airflow/dags
+      - ./config/security:/opt/airflow/config/security 
       - ./airflow-logs:/opt/airflow/logs
       - ./scripts:/opt/airflow/scripts
     healthcheck:
@@ -59,8 +61,13 @@ services:
       - postgres
     env_file:
       - .env
+    environment:
+      - AIRFLOW__WEBSERVER__RBAC=True
+      - AIRFLOW__WEBSERVER__SECURITY_MANAGER_CLASS=config.security.override_security_manager.CustomSecurityManager
+
     volumes:
       - ./dags:/opt/airflow/dags
+      - ./config/security:/opt/airflow/config/security 
       - ./airflow-logs:/opt/airflow/logs
       - ./scripts:/opt/airflow/scripts
     ports:

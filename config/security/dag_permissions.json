@@ -1,0 +1,6 @@
+{
+    "airflow": ["*"],
+    "andry": ["imdb_download", "etl_movies"],
+    "analyst": ["reporting_dag"]
+  }
+  
