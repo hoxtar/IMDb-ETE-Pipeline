@@ -14,16 +14,9 @@ def download_imdb_data():
     print(f"Downloaded {local_file}")
 
 def load_data_into_postgres():
-    # Path to downloaded files
+
+    # Path to downloaded file
     gz_file_path = "/opt/airflow/dags/files/title.basics.tsv.gz"
-
-    # Decompress the file
-    with gzip.open(gz_file_path, 'rt', encoding='utf-8') as f:
-        lines = f.readlines()
-
-    # Parse header and rows
-    header = lines[0].strip().split('\t')
-    rows = [line.strip().split('\t') for line in lines[1:1001]] # First 1000 for test
 
     # Connect to Postgres
     conn = psycopg2.connect(
@@ -35,7 +28,7 @@ def load_data_into_postgres():
     )
     cur = conn.cursor()
 
-    # Create table
+    # Create table if not exists
     cur.execute("""
         CREATE TABLE IF NOT EXISTS imdb_title_basics (
             tconst TEXT,
@@ -50,6 +43,33 @@ def load_data_into_postgres():
         );
     """)
     conn.commit()
+
+    # Decompress and read file
+    with gzip.open(gz_file_path, 'rt', encoding='utf-8') as f:
+        header = next(f)  # Skip header
+        row_count = 0
+
+        for line in f:
+            if row_count >= 1000:  # Limit to first 1000 rows for test
+                break
+
+            values = line.strip().split('\t')
+            if len(values) == 9:  # Ensure row has all columns
+                cur.execute("""
+                    INSERT INTO imdb_title_basics (
+                        tconst, titleType, primaryTitle, originalTitle,
+                        isAdult, startYear, endYear, runtimeMinutes, genres
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
+                """, values)
+
+                row_count += 1
+
+    conn.commit()
+    cur.close()
+    conn.close()
+    print(f"Total rows processed and inserted: {row_count}")
+
 
 with DAG(
     dag_id="imdb_download_and_load_dag",
