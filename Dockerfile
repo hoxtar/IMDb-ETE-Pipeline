@@ -11,7 +11,7 @@ ADD dags /opt/airflow/dags
 ADD config/security/dag_permissions.json /opt/airflow/config/security/dag_permissions.json
 
 #  ADD your override module to Airflow's expected location
-ADD config/security/override_security_manager.py /opt/airflow/airflow/www/security/CustomSecurityManager.py
+ADD airflow/www/security/CustomSecurityManager.py /opt/airflow/airflow/www/security/CustomSecurityManager.py
 
 # Switch to airflow user BEFORE installing packages
 USER airflow
