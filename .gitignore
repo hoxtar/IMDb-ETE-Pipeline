@@ -2,29 +2,31 @@
 *.py[cod]
 __pycache__/
 
-# Virtual environment folders (if using virtualenv, venv, etc.)
+# Virtual environments
 env/
 venv/
 *.egg-info/
 
-# Environment variables file (contains sensitive data)
+# Environment variables (sensitive)
 .env
 
-# Airflow logs and general log files
+# Airflow logs and metadata
 airflow-logs/
+airflow.db
 *.log
 
-# Build output folders (if applicable)
+# IMDb downloaded files
+dags/files/*.tsv.gz
+
+# Build output folders
 build/
 dist/
 
-# IDE/Editor settings (e.g., Visual Studio Code)
+# Editor/IDE settings
 .vscode/
 
 # System files
 .DS_Store
 Thumbs.db
 
-# First downloaded file with DAG for locally test purpose
-dags/files/title.basics.tsv.gz
 
