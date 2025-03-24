@@ -19,7 +19,8 @@ DOWNLOAD_DIR = '/opt/airflow/dags/files'
 # Directory containing SQL table creation scripts
 SCHEMA_DIR = '/opt/airflow/schemas'
 
-# IMDb file mapping: {key: filename}
+# Defines expected table schemas for validation and insertion
+# Used to build INSERT queries dynamically and validate row lengths
 IMDB_FILES = {
     'title_basics': 'title.basics.tsv.gz',
     'title_akas': 'title.akas.tsv.gz',
@@ -81,7 +82,7 @@ def download_imdb_data(file_key):
     url = BASE_URL + filename
     filepath = os.path.join(DOWNLOAD_DIR, filename)
 
-    if os.path.exists(filepath) and os.path.getsize(filepath) > 1000: # Check if file is > 1 KB (Not empty)
+    if os.path.exists(filepath) and os.path.getsize(filepath) > 1000: # Skip re-downloading if file exists and is likely valid (>1KB avoids downloading partial/corrupted files)
         log.info(f"[SKIP] {filename} already exists.")
         return
 
@@ -103,7 +104,7 @@ def load_table_to_postgres(file_key):
     2. Truncate table (idempotency).
     3. Load data from TSV file.
     """
-    hook = PostgresHook(postgres_conn_id='my_postgres')  # Set in Airflow UI
+    hook = PostgresHook(postgres_conn_id='my_postgres') # Connection ID 'my_postgres' must be configured in Airflow Connections UI
     conn = hook.get_conn()
     cur = conn.cursor()
 
@@ -135,7 +136,7 @@ def load_table_to_postgres(file_key):
     val_placeholder = ', '.join(['%s'] * expected_col_count)
     insert_query = f"INSERT INTO {table_name} ({col_placeholder}) VALUES ({val_placeholder});"
 
-    # Insert data row-by-row (can be optimized later with batch inserts)
+    # Insert all rows using executemany (faster batch insertion)
     row_count = 0
     with gzip.open(gz_path, 'rt', encoding='utf-8') as f:
         next(f)  # Skip header
@@ -189,7 +190,7 @@ def create_imdb_dag():
             download_tasks.append(dl_task)
             load_tasks.append(ld_task)
 
-            dl_task >> ld_task  # Set dependency: download -> load
+            dl_task >> ld_task  # Ensure download finishes before starting load for each dataset
 
         return dag
 
