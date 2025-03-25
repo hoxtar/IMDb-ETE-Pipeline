@@ -16,10 +16,13 @@
 ---
 
 ## Progress Overview
-- Airflow DAG running, IMDb data successfully downloaded to local volume.
-- PostgreSQL load working with manual row count verification.
+- Airflow DAG `imdb_download_and_load_dag` now downloads and loads 7 IMDb datasets into PostgreSQL.
+- PostgreSQL load uses batch insert logic with idempotency: tables are truncated before each run.
+- NULLs (`\N`) from IMDb data are safely handled.
+- Logging is implemented to trace each phase of the load (download, truncate, insert, verify).
+- Manual table drop was necessary for some conflicting table types.
+- Heartbeat errors investigated and mitigated by optimizing memory usage and batch size.
 - Custom DAG permissions enforced for users (e.g., airflow, andry).
-- Optimized Docker build – faster rebuilds, clean architecture.
 - dbt model design planned for next sprint.
 
 ---
@@ -29,6 +32,7 @@
 - [2024-03-17] Added `psycopg2-binary` to Dockerfile for PostgreSQL integration.
 - [2024-03-18] Integrated custom security manager for user-specific DAG access control.
 - [2024-03-18] Improved Docker build efficiency by externalizing configuration.
+- [2025-03-25] Implemented full batch load with idempotency, logging, and fault handling.
 
 ---
 
@@ -36,9 +40,9 @@
 - Docker: 24.0.X
 - Docker Compose: 2.20.X
 - Python (inside container): 3.8.X
-- Airflow: 2.7.X
+- Airflow: 2.10.5
 - PostgreSQL: 12.X (Docker container)
-- Python Packages: `requests`, `psycopg2-binary`, `boto3`
+- Python Packages: `requests`, `psycopg2-binary`, `gzip`, `boto3`
 
 ---
 
@@ -48,79 +52,89 @@
 ```bash
 git clone <repo-url>
 cd IMDb-ETE-Pipeline
-docker compose up -d
+docker compose up --build
 ```
 
 ### Access Airflow UI
 - URL: [http://localhost:8080](http://localhost:8080)
+- Login: `admin / admin`
 
 ### Trigger DAG Manually
 ```bash
-docker exec -it webserver-1 bash
-airflow dags trigger imdb_download_dag
+docker exec -it <webserver_container> bash
+airflow dags trigger imdb_download_and_load_dag
 ```
 
 ---
 
-## Planned Idempotency Logic
+## Current Idempotency Logic
 
-- The IMDb dataset is refreshed daily, making it important to avoid data duplication.
-- To ensure idempotent data loading, the following logic will be implemented:
-  1. Check if new data files are available before proceeding.
-  2. If files are present, truncate the destination table to clear old data.
-  3. Insert fresh data safely, ensuring consistency across runs.
+- The DAG automatically checks if the file exists and skips download if already present.
+- Each table is truncated before insert to prevent duplication.
+- Data is inserted in batches of 10,000 rows for performance.
+- A final check confirms number of inserted rows using `SELECT COUNT(*)`.
 
-This logic will guarantee the database remains clean and accurate, regardless of re-runs or failed attempts. Currently, data is appended for testing purposes, and row counts are used for manual verification.
+---
+
+## Logging and Monitoring
+
+- Logs are printed at:
+  - File existence check
+  - Download start & finish
+  - Table creation & truncate
+  - Batch inserts every 10k
+  - Row count at end
+- Logs are accessible in the Airflow UI per-task.
+- Known issue: Airflow UI may not persist connections if defined via `.env` and docker-compose (Airflow <2.3).
 
 ---
 
 ## Custom DAG Permissions
 
-- Using a CustomSecurityManager, we control which DAGs are visible to specific users.
-- The mapping between users and accessible DAGs is defined in `config/security/dag_permissions.json`, making it easy to update without modifying code.
+- Controlled via `CustomSecurityManager` in `airflow/www/security/`.
+- Mapping of user-DAG visibility is set in `config/security/dag_permissions.json`.
 - Example:
   ```json
   {
     "airflow": ["dag1", "dag2"],
-    "andry": ["imdb_download_dag", "dag2"]
+    "andry": ["imdb_download_and_load_dag"]
   }
   ```
-
-- This enhances security and usability for multi-user environments.
 
 ---
 
 ## Folder Structure
 ```
 .
-├── dags/                          # DAG scripts + downloaded files
-│   ├── files/                     # Downloaded IMDb data
-│   └── imdb_download_dag.py       # DAG for download and load
+├── dags/
+│   ├── files/                     # IMDb data files
+│   └── imdb_download_dag.py       # DAG logic
+├── schemas/                       # PostgreSQL CREATE TABLE scripts
 ├── scripts/
-│   └── airflow-entrypoint.sh      # Airflow service startup script
+│   └── airflow-entrypoint.sh
 ├── config/security/
-│   ├── dag_permissions.json       # DAG access control config
+│   └── dag_permissions.json
 ├── airflow/www/security/
-│   └── CustomSecurityManager.py   # Custom DAG access logic
-├── airflow-logs/                  # Airflow logs (auto-generated)
-├── docker-compose.yml             # Service definitions
-├── Dockerfile                     # Custom Airflow image setup
-├── requirements.txt               # Python dependencies
-└── README.md                      # Project overview and instructions
+│   └── CustomSecurityManager.py
+├── airflow-logs/ (auto-generated)
+├── docker-compose.yml
+├── Dockerfile
+├── requirements.txt
+└── README.md
 ```
 
 ---
 
 ## Notes on Performance
-- Configuration files (like `dag_permissions.json`) are mounted as volumes for easy updates without needing a full image rebuild.
-- Docker build optimized by avoiding unnecessary rebuilds of unchanged files, resulting in faster setup.
+- Batch size: 10,000 rows per insert — can be tuned.
+- Process logging occurs every 100k lines.
+- You may need to drop existing tables manually before running DAG the first time to avoid type conflicts.
+- Heartbeat warning appears when a long-running insert stalls the scheduler — not fatal but worth monitoring.
 
 ---
 
 ## Next Steps
-- [ ] Finalize and test PostgreSQL load task with idempotent logic.
-- [ ] Design and implement dbt transformations.
-- [ ] Plan cloud deployment (e.g., AWS/GCP) and optimize performance.
-- [ ] Improve logging and monitoring of DAG runs.
----
-
+- [ ] Design and test dbt transformations (post-load cleanup & modeling).
+- [ ] Add retry logic for failed downloads or partial loads.
+- [ ] Optional: Add table existence check to skip table creation step.
+- [ ] Deploy on cloud infra (e.g., GCP Composer or AWS MWAA).
