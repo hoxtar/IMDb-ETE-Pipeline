@@ -7,5 +7,5 @@ CREATE TABLE IF NOT EXISTS imdb_title_basics (
     startYear INT,
     endYear INT,
     runtimeMinutes INT,
-    genres TEXT[]
+    genres TEXT
 );

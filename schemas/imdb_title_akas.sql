@@ -4,8 +4,8 @@ CREATE TABLE IF NOT EXISTS imdb_title_akas (
     title TEXT,
     region TEXT,
     language TEXT,
-    types TEXT[],        -- Array of text (PostgreSQL syntax)
-    attributes TEXT[],   -- Array of text (PostgreSQL syntax)
+    types TEXT,        -- Array of text (PostgreSQL syntax)
+    attributes TEXT,   -- Array of text (PostgreSQL syntax)
     isOriginalTitle BOOLEAN,
     PRIMARY KEY (titleId, ordering)
 );
