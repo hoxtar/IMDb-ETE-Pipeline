@@ -4,23 +4,20 @@ import requests
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from airflow.utils.log.logging_mixin import LoggingMixin # Allows Airflow-native logging for tasks
+from airflow.utils.log.logging_mixin import LoggingMixin  # Airflow-native logging
 from airflow.hooks.postgres_hook import PostgresHook
 from datetime import datetime
 
-# Initialize logger for Airflow logging (Directly use log.info, log.error, etc.)
+# Initialize Airflow logger
 log = LoggingMixin().log
 
 # -----------------------------
 # Configuration Section
 # -----------------------------
-# Directory where IMDb files are downloaded
-DOWNLOAD_DIR = '/opt/airflow/dags/files'
-# Directory containing SQL table creation scripts
-SCHEMA_DIR = '/opt/airflow/schemas'
+DOWNLOAD_DIR = '/opt/airflow/dags/files'     # Download destination
+SCHEMA_DIR = '/opt/airflow/schemas'          # SQL schema scripts directory
 
-# Defines expected table schemas for validation and insertion
-# Used to build INSERT queries dynamically and validate row lengths
+# IMDb dataset filenames
 IMDB_FILES = {
     'title_basics': 'title.basics.tsv.gz',
     'title_akas': 'title.akas.tsv.gz',
@@ -31,10 +28,9 @@ IMDB_FILES = {
     'title_principals': 'title.principals.tsv.gz'
 }
 
-# Base URL to download IMDb datasets
-BASE_URL = 'https://datasets.imdbws.com/'
+BASE_URL = 'https://datasets.imdbws.com/'    # IMDb download base URL
 
-# Table-specific configurations: column list and expected column count
+# Schema definition for validation and insertion
 TABLE_CONFIGS = {
     'title_basics': {
         'columns': ['tconst', 'titleType', 'primaryTitle', 'originalTitle',
@@ -82,29 +78,39 @@ def download_imdb_data(file_key):
     url = BASE_URL + filename
     filepath = os.path.join(DOWNLOAD_DIR, filename)
 
-    if os.path.exists(filepath) and os.path.getsize(filepath) > 1000: # Skip re-downloading if file exists and is likely valid (>1KB avoids downloading partial/corrupted files)
-        log.info(f"[SKIP] {filename} already exists.")
-        return
+    if os.path.exists(filepath):
+        size_kb = os.path.getsize(filepath) / 1024
+        if size_kb > 1:
+            log.info(f"[SKIP] {filename} already exists. Size: {size_kb:.2f} KB")
+            return
+        else:
+            log.warning(f"[WARN] {filename} exists but too small ({size_kb:.2f} KB). Re-downloading.")
 
     log.info(f"Downloading {filename} from {url}...")
     response = requests.get(url)
-    response.raise_for_status()  # Raise error if download fails
+    response.raise_for_status()  # Raise HTTP error if download failed
 
     with open(filepath, 'wb') as f:
         f.write(response.content)
-    log.info(f"[DONE] Saved {filename} to {filepath}")
+    size_kb = os.path.getsize(filepath) / 1024
+    log.info(f"[DONE] Saved {filename} to {filepath} ({size_kb:.2f} KB)")
+
+
+def sanitize_value(val):
+    return None if val == r'\N' else val
+
 
 # -----------------------------
 # Load Task Function
 # -----------------------------
 def load_table_to_postgres(file_key):
     """
-    Load data from IMDb file into PostgreSQL:
-    1. Create table using schema SQL.
-    2. Truncate table (idempotency).
-    3. Load data from TSV file.
+    Load IMDb data into PostgreSQL:
+    1. Create table if not exists using SQL file.
+    2. Truncate table (idempotent).
+    3. Load data from decompressed TSV.
     """
-    hook = PostgresHook(postgres_conn_id='my_postgres') # Connection ID 'my_postgres' must be configured in Airflow Connections UI
+    hook = PostgresHook(postgres_conn_id='my_postgres')
     conn = hook.get_conn()
     cur = conn.cursor()
 
@@ -113,46 +119,69 @@ def load_table_to_postgres(file_key):
     columns = config['columns']
     expected_col_count = config['column_count']
 
-    # Step 1: Run CREATE TABLE from SQL file
+    # Step 1: Create table from schema
     schema_file_path = os.path.join(SCHEMA_DIR, f"{table_name}.sql")
+    log.info(f"[SCHEMA] Executing SQL for table: {table_name}")
     with open(schema_file_path, 'r') as schema_file:
         create_sql = schema_file.read()
         cur.execute(create_sql)
         conn.commit()
-        log.info(f"[TABLE READY] {table_name}")
+        log.info(f"[TABLE CREATED] {table_name}")
 
-    # Step 2: Check file existence and truncate table
+    # Step 2: File check and truncate
     gz_path = os.path.join(DOWNLOAD_DIR, IMDB_FILES[file_key])
     if not os.path.exists(gz_path) or os.path.getsize(gz_path) < 1000:
-        log.warning(f"[SKIP] File missing or empty: {gz_path}")
+        log.warning(f"[SKIP] File missing or too small: {gz_path}")
         return
 
+    log.info(f"[TRUNCATE] Clearing table {table_name} for fresh load...")
     cur.execute(f"TRUNCATE TABLE {table_name};")
     conn.commit()
-    log.info(f"[TRUNCATED] {table_name}")
 
     # Step 3: Prepare insertion
     col_placeholder = ', '.join(columns)
     val_placeholder = ', '.join(['%s'] * expected_col_count)
     insert_query = f"INSERT INTO {table_name} ({col_placeholder}) VALUES ({val_placeholder});"
 
-    # Insert all rows using executemany (faster batch insertion)
+    # Read and insert data
     row_count = 0
+    batch_size = 10000 # Can be tweaked based on system resources
+    batch = []
+    log.info(f"[LOADING] Reading data from {gz_path}")
     with gzip.open(gz_path, 'rt', encoding='utf-8') as f:
         next(f)  # Skip header
-        batch = []
-        for line in f:
-            values = line.strip().split('\t')
+        for i, line in enumerate(f, start=1):
+            values = [sanitize_value(v) for v in line.strip().split('\t')]
+
             if len(values) == expected_col_count:
+                
                 batch.append(values)
+                row_count += 1
 
-        # Bulk insert
+                if len(batch) >= batch_size:
+                    cur.executemany(insert_query, batch)
+                    conn.commit()
+                    log.info(f"[INSERT] Inserted batch of {len(batch)} rows into {table_name} (total so far: {row_count})")
+                    batch = []
+
+            if i % 100000 == 0:
+                log.info(f"[PROGRESS] Processed {i} lines...")
+
+    # Leftover rows batch
+    if batch:
         cur.executemany(insert_query, batch)
+        conn.commit()
+        log.info(f"[INSERT] Inserted final {len(batch)} rows into {table_name}...")
 
-    conn.commit()
+    # Sanity check
+    cur.execute(f"SELECT COUNT(*) FROM {table_name};")
+    result = cur.fetchone()[0]
+    log.info(f"[VERIFY] Row count in {table_name}: {result}")
+
     cur.close()
     conn.close()
-    log.info(f"[LOAD DONE] {row_count} rows into {table_name}")
+
+    log.info(f"[LOAD DONE] Inserted {row_count} rows into {table_name}")
 
 # -----------------------------
 # DAG Definition
@@ -169,30 +198,22 @@ def create_imdb_dag():
         catchup=False
     ) as dag:
 
-        download_tasks = []
-        load_tasks = []
-
         for file_key in IMDB_FILES:
-            # Create download task for each file
             dl_task = PythonOperator(
                 task_id=f"download_{file_key}",
                 python_callable=download_imdb_data,
                 op_args=[file_key],
             )
 
-            # Create load task for each file
             ld_task = PythonOperator(
                 task_id=f"load_{file_key}_to_postgres",
                 python_callable=load_table_to_postgres,
                 op_args=[file_key],
             )
 
-            download_tasks.append(dl_task)
-            load_tasks.append(ld_task)
-
-            dl_task >> ld_task  # Ensure download finishes before starting load for each dataset
+            dl_task >> ld_task  # Ensure download before load
 
         return dag
 
-# Create the DAG
+# Register DAG
 globals()['imdb_download_and_load_dag'] = create_imdb_dag()
