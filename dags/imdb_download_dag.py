@@ -1,14 +1,16 @@
 """
-Airflow DAG: IMDb Data Download and Load
+Airflow DAG: IMDb Data Download and Load via Postgres COPY
 Author: Your Name
 Description:
-  This DAG downloads IMDb TSV files and loads them into a Postgres database.
-  It demonstrates best practices in logging, error handling, batching, and 
-  clear structure for a robust data pipeline.
+  This DAG downloads IMDb TSV files and loads them into a Postgres database 
+  using the COPY command for efficient bulk ingestion. It demonstrates 
+  best practices in logging, error handling, and a clear structure 
+  for a robust data pipeline.
 """
 
 import os
 import gzip
+import shutil
 import requests
 
 from datetime import datetime, timedelta
@@ -87,13 +89,6 @@ TABLE_CONFIGS = {
 # 2. Helper Functions
 # ----------------------------------------------------------------------------
 
-def sanitize_value(val: str):
-    """
-    Converts the IMDb null placeholder '\\N' to Python None for Postgres insertion.
-    """
-    return None if val == r'\N' else val
-
-
 def create_table_if_not_exists(cur, schema_file_path: str, table_name: str):
     """
     Executes the SQL in schema_file_path to create a Postgres table if not already present.
@@ -166,7 +161,16 @@ def download_imdb_data(file_key: str) -> None:
         raise
 
 
-def load_table_to_postgres(file_key: str) -> None:
+def load_table_to_postgres_via_copy(file_key: str) -> None:
+    """
+    Loads IMDb TSV data into Postgres via COPY command for maximum performance.
+    Steps:
+      1) Create table if not exists.
+      2) TRUNCATE the table for idempotent load.
+      3) Decompress .gz into a temporary .tsv file (strip the header line).
+      4) Use COPY to load, specifying null placeholder and tab delimiter.
+      5) Validate row count in the DB matches the file lines.
+    """
     table_name = f"imdb_{file_key}"
     config = TABLE_CONFIGS[file_key]
     columns = config['columns']
@@ -179,8 +183,11 @@ def load_table_to_postgres(file_key: str) -> None:
     schema_file_path = os.path.join(SCHEMA_DIR, f"{table_name}.sql")
     gz_path = os.path.join(DOWNLOAD_DIR, IMDB_FILES[file_key])
 
+    # We'll store the decompressed file in the same directory but with .tsv extension
+    uncompressed_tsv_path = os.path.join(DOWNLOAD_DIR, f"{file_key}.tsv")
+
     try:
-        # 1) Create table
+        # 1) Create table if needed
         create_table_if_not_exists(cur, schema_file_path, table_name)
         conn.commit()
 
@@ -189,70 +196,61 @@ def load_table_to_postgres(file_key: str) -> None:
             log.warning(f"[SKIP] {gz_path} is missing or too small.")
             return
 
-        # 3) Truncate table
-        log.info(f"[TRUNCATE] Clearing table {table_name}...")
+        # TRUNCATE the table
+        log.info(f"[TRUNCATE] Clearing table {table_name}")
         cur.execute(f"TRUNCATE TABLE {table_name};")
         conn.commit()
 
-        # 4) Count total lines (Pass 1)
-        with gzip.open(gz_path, 'rt', encoding='utf-8') as f:
-            total_lines = sum(1 for _ in f) - 1  # minus header line
-        log.info(f"[INFO] Found {total_lines:,} lines (excluding header).")
+        # 3) Decompress and remove the header
+        log.info(f"[DECOMPRESS] Creating temporary TSV: {uncompressed_tsv_path}")
+        with gzip.open(gz_path, 'rt', encoding='utf-8') as gzfile, open(uncompressed_tsv_path, 'w', encoding='utf-8') as tsvfile:
+            # Skip the header line once
+            header = next(gzfile)
+            log.info(f"[HEADER] Skipped: {header.strip()}")
+            # Write the rest directly
+            shutil.copyfileobj(gzfile, tsvfile)
 
-        # 5) Insert in batches (Pass 2)
-        batch_size = 50_000
-        insert_query = f"""
-            INSERT INTO {table_name} ({', '.join(columns)}) 
-            VALUES ({', '.join(['%s'] * expected_col_count)});
+        # Now let's count the lines in the uncompressed TSV
+        with open(uncompressed_tsv_path, 'r', encoding='utf-8') as f:
+            total_lines = sum(1 for _ in f)
+        log.info(f"[INFO] {uncompressed_tsv_path} has {total_lines:,} data lines (excluding header).")
+
+        # 4) COPY into Postgres
+        # We specify NULL '\N' since IMDb uses \N for missing values
+        copy_sql = f"""
+            COPY {table_name} ({', '.join(columns)})
+            FROM STDIN
+            WITH (
+                FORMAT csv,
+                DELIMITER E'\t',
+                NULL '\\N',
+                ENCODING 'UTF8'
+            );
         """
+        log.info(f"[COPY] Inserting data into {table_name} via COPY...")
+        with open(uncompressed_tsv_path, 'r', encoding='utf-8') as tsvfile:
+            cur.copy_expert(copy_sql, tsvfile)
+        conn.commit()
+        log.info(f"[COPY DONE] Finished loading {table_name} via COPY.")
 
-        batch = []
-        row_count = 0
-
-        with gzip.open(gz_path, 'rt', encoding='utf-8') as f:
-            next(f)  # skip header
-            for i, line in enumerate(f, start=1):
-                values = [sanitize_value(v) for v in line.strip().split('\t')]
-                if len(values) == expected_col_count:
-                    batch.append(values)
-                    row_count += 1
-
-                if len(batch) >= batch_size:
-                    cur.executemany(insert_query, batch)
-                    conn.commit()
-                    log.info(
-                        f"[INSERT] {len(batch)} rows committed (total inserted: {row_count:,})."
-                    )
-                    batch.clear()
-
-                # Log progress every 100k lines
-                if i % 100_000 == 0:
-                    pct = (i / total_lines) * 100
-                    log.info(f"[PROGRESS] {i:,}/{total_lines:,} lines ({pct:.2f}%) for {table_name}")
-
-        # leftover rows
-        if batch:
-            cur.executemany(insert_query, batch)
-            conn.commit()
-            log.info(f"[INSERT] Final batch of {len(batch)} rows. Total inserted: {row_count:,}.")
-
-        # 6) Verify row count
+        # 5) Validate row count
         cur.execute(f"SELECT COUNT(*) FROM {table_name};")
         db_count = cur.fetchone()[0]
-        log.info(f"[VERIFY] DB row count: {db_count:,}. Inserted: {row_count:,}.")
+        log.info(f"[VERIFY] DB row count: {db_count:,}. File lines: {total_lines:,}.")
 
-        if db_count != row_count:
+        if db_count != total_lines:
             log.warning(
-                f"[MISMATCH] Inserted {row_count:,} rows but have {db_count:,} in DB."
+                f"[MISMATCH] Inserted {db_count:,} rows but file had {total_lines:,} lines."
             )
 
     except Exception as e:
-        log.error(f"[ERROR] Loading data into {table_name} failed: {e}")
+        log.error(f"[ERROR] Loading data via COPY into {table_name} failed: {e}")
         raise
     finally:
+        # Clean up local temp file if you want
+        # os.remove(uncompressed_tsv_path)
         cur.close()
         conn.close()
-
 
 
 # ----------------------------------------------------------------------------
@@ -269,7 +267,6 @@ dag = DAG(
     },
     schedule_interval="@daily",
     catchup=False,
-    #max_active_runs=1,
 )
 
 with dag:
@@ -280,10 +277,10 @@ with dag:
             op_args=[file_key]
         )
 
-        load = PythonOperator(
+        load_via_copy = PythonOperator(
             task_id=f"load_{file_key}_to_postgres",
-            python_callable=load_table_to_postgres,
+            python_callable=load_table_to_postgres_via_copy,
             op_args=[file_key]
         )
 
-        download >> load
+        download >> load_via_copy
