@@ -122,22 +122,26 @@ def download_imdb_data(file_key: str) -> None:
 
         if os.path.exists(filepath):
             local_timestamp = os.path.getmtime(filepath)
-            local_dt = datetime.utcfromtimestamp(local_timestamp)
-            log.info(f"[LOCAL] {filepath} last modified: {local_dt}")
+            # Mark local file time as UTC
+            local_dt = datetime.utcfromtimestamp(local_timestamp).replace(tzinfo=None)  # still naive
+            log.info(f"[LOCAL] {filepath} last modified: {local_dt} (UTC naive)")
 
             if remote_last_modified_str:
                 remote_dt = parsedate_to_datetime(remote_last_modified_str)
-                log.info(f"[REMOTE] {filename} last modified: {remote_dt}")
+                # Also remove any tz offset for direct comparison
+                remote_dt_naive = remote_dt.replace(tzinfo=None)
 
-                # Compare them directly as datetime objects
-                if local_dt >= remote_dt:
-                    log.info(f"[SKIP] Local is up-to-date. (Local: {local_dt}, Remote: {remote_dt})")
+                log.info(f"[REMOTE] {filename} last modified: {remote_dt} (aware), comparing as {remote_dt_naive}")
+
+                # Now naive vs naive
+                if local_dt >= remote_dt_naive:
+                    log.info(f"[SKIP] Local is up-to-date.")
                     return
                 else:
-                    log.info(f"[RE-DOWNLOAD] Local is older. (Local: {local_dt}, Remote: {remote_dt})")
+                    log.info(f"[RE-DOWNLOAD] Local is older.")
             else:
-                # If there's no Last-Modified header, fallback to always re-download
                 log.warning("[WARN] No 'Last-Modified' in response headers. Re-downloading anyway.")
+
 
         # If we reach this point:
         # - file doesn't exist, or
@@ -221,7 +225,7 @@ def load_table_to_postgres_via_copy(file_key: str) -> None:
             COPY {table_name} ({', '.join(columns)})
             FROM STDIN
             WITH (
-                FORMAT csv,
+                FORMAT TEXT,
                 DELIMITER E'\t',
                 NULL '\\N',
                 ENCODING 'UTF8'
@@ -263,7 +267,7 @@ dag = DAG(
         'start_date': datetime(2025, 1, 1),
         'retries': 3,
         'retry_delay': timedelta(minutes=5),
-        'execution_timeout': timedelta(hours=8),
+        'execution_timeout': timedelta(hours=2),
     },
     schedule_interval="@daily",
     catchup=False,
