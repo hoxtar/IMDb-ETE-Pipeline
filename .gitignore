@@ -17,6 +17,7 @@ airflow.db
 
 # IMDb downloaded files
 dags/files/*.tsv.gz
+dags/files/*.tsv
 
 # Build output folders
 build/
