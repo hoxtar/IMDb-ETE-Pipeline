@@ -1,23 +1,37 @@
+"""
+Airflow DAG: IMDb Data Download and Load
+Author: Your Name
+Description:
+  This DAG downloads IMDb TSV files and loads them into a Postgres database.
+  It demonstrates best practices in logging, error handling, batching, and 
+  clear structure for a robust data pipeline.
+"""
+
 import os
 import gzip
 import requests
 
+from datetime import datetime, timedelta
+from email.utils import parsedate_to_datetime
+
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from airflow.utils.log.logging_mixin import LoggingMixin  # Airflow-native logging
+from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.hooks.postgres_hook import PostgresHook
-from datetime import datetime
 
 # Initialize Airflow logger
 log = LoggingMixin().log
 
-# -----------------------------
-# Configuration Section
-# -----------------------------
-DOWNLOAD_DIR = '/opt/airflow/dags/files'     # Download destination
-SCHEMA_DIR = '/opt/airflow/schemas'          # SQL schema scripts directory
+# ----------------------------------------------------------------------------
+# 1. Configuration
+# ----------------------------------------------------------------------------
 
-# IMDb dataset filenames
+DOWNLOAD_DIR = os.environ.get('IMDB_DOWNLOAD_DIR', '/opt/airflow/dags/files')
+SCHEMA_DIR = os.environ.get('IMDB_SCHEMA_DIR', '/opt/airflow/schemas')
+POSTGRES_CONN_ID = os.environ.get('POSTGRES_CONN_ID', 'my_postgres')
+
+BASE_URL = 'https://datasets.imdbws.com/'
+
 IMDB_FILES = {
     'title_basics': 'title.basics.tsv.gz',
     'title_akas': 'title.akas.tsv.gz',
@@ -28,18 +42,19 @@ IMDB_FILES = {
     'title_principals': 'title.principals.tsv.gz'
 }
 
-BASE_URL = 'https://datasets.imdbws.com/'    # IMDb download base URL
-
-# Schema definition for validation and insertion
 TABLE_CONFIGS = {
     'title_basics': {
-        'columns': ['tconst', 'titleType', 'primaryTitle', 'originalTitle',
-                    'isAdult', 'startYear', 'endYear', 'runtimeMinutes', 'genres'],
+        'columns': [
+            'tconst', 'titleType', 'primaryTitle', 'originalTitle',
+            'isAdult', 'startYear', 'endYear', 'runtimeMinutes', 'genres'
+        ],
         'column_count': 9
     },
     'title_akas': {
-        'columns': ['titleId', 'ordering', 'title', 'region', 'language',
-                    'types', 'attributes', 'isOriginalTitle'],
+        'columns': [
+            'titleId', 'ordering', 'title', 'region', 'language',
+            'types', 'attributes', 'isOriginalTitle'
+        ],
         'column_count': 8
     },
     'title_ratings': {
@@ -47,8 +62,10 @@ TABLE_CONFIGS = {
         'column_count': 3
     },
     'name_basics': {
-        'columns': ['nconst', 'primaryName', 'birthYear', 'deathYear',
-                    'primaryProfession', 'knownForTitles'],
+        'columns': [
+            'nconst', 'primaryName', 'birthYear', 'deathYear',
+            'primaryProfession', 'knownForTitles'
+        ],
         'column_count': 6
     },
     'title_crew': {
@@ -65,155 +82,208 @@ TABLE_CONFIGS = {
     }
 }
 
-# -----------------------------
-# Download Task Function
-# -----------------------------
-def download_imdb_data(file_key):
+
+# ----------------------------------------------------------------------------
+# 2. Helper Functions
+# ----------------------------------------------------------------------------
+
+def sanitize_value(val: str):
     """
-    Download IMDb dataset file if not already downloaded.
-    Skips download if the file already exists and is >1KB.
+    Converts the IMDb null placeholder '\\N' to Python None for Postgres insertion.
     """
-    os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-    filename = IMDB_FILES[file_key]
-    url = BASE_URL + filename
-    filepath = os.path.join(DOWNLOAD_DIR, filename)
-
-    if os.path.exists(filepath):
-        size_kb = os.path.getsize(filepath) / 1024
-        if size_kb > 1:
-            log.info(f"[SKIP] {filename} already exists. Size: {size_kb:.2f} KB")
-            return
-        else:
-            log.warning(f"[WARN] {filename} exists but too small ({size_kb:.2f} KB). Re-downloading.")
-
-    log.info(f"Downloading {filename} from {url}...")
-    response = requests.get(url)
-    response.raise_for_status()  # Raise HTTP error if download failed
-
-    with open(filepath, 'wb') as f:
-        f.write(response.content)
-    size_kb = os.path.getsize(filepath) / 1024
-    log.info(f"[DONE] Saved {filename} to {filepath} ({size_kb:.2f} KB)")
-
-
-def sanitize_value(val):
     return None if val == r'\N' else val
 
 
-# -----------------------------
-# Load Task Function
-# -----------------------------
-def load_table_to_postgres(file_key):
+def create_table_if_not_exists(cur, schema_file_path: str, table_name: str):
     """
-    Load IMDb data into PostgreSQL:
-    1. Create table if not exists using SQL file.
-    2. Truncate table (idempotent).
-    3. Load data from decompressed TSV.
+    Executes the SQL in schema_file_path to create a Postgres table if not already present.
     """
-    hook = PostgresHook(postgres_conn_id='my_postgres')
-    conn = hook.get_conn()
-    cur = conn.cursor()
+    log.info(f"[SCHEMA] Creating table if not exists: {table_name}")
+    with open(schema_file_path, 'r') as schema_file:
+        create_sql = schema_file.read()
+    cur.execute(create_sql)
 
-    config = TABLE_CONFIGS[file_key]
+
+# ----------------------------------------------------------------------------
+# 3. Task Functions
+# ----------------------------------------------------------------------------
+
+def download_imdb_data(file_key: str) -> None:
+    """
+    Downloads the IMDb file from the official URL. 
+    Uses 'Last-Modified' headers to skip if local copy is up-to-date.
+    """
+    os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+    filename = IMDB_FILES[file_key]
+    file_url = BASE_URL + filename
+    filepath = os.path.join(DOWNLOAD_DIR, filename)
+
+    try:
+        # HEAD request for Last-Modified
+        head_resp = requests.head(file_url, timeout=30)
+        head_resp.raise_for_status()
+
+        remote_last_modified_str = head_resp.headers.get('Last-Modified')
+
+        if os.path.exists(filepath):
+            local_timestamp = os.path.getmtime(filepath)
+            local_dt = datetime.utcfromtimestamp(local_timestamp)
+            log.info(f"[LOCAL] {filepath} last modified: {local_dt}")
+
+            if remote_last_modified_str:
+                remote_dt = parsedate_to_datetime(remote_last_modified_str)
+                log.info(f"[REMOTE] {filename} last modified: {remote_dt}")
+
+                # Compare them directly as datetime objects
+                if local_dt >= remote_dt:
+                    log.info(f"[SKIP] Local is up-to-date. (Local: {local_dt}, Remote: {remote_dt})")
+                    return
+                else:
+                    log.info(f"[RE-DOWNLOAD] Local is older. (Local: {local_dt}, Remote: {remote_dt})")
+            else:
+                # If there's no Last-Modified header, fallback to always re-download
+                log.warning("[WARN] No 'Last-Modified' in response headers. Re-downloading anyway.")
+
+        # If we reach this point:
+        # - file doesn't exist, or
+        # - remote is newer, or
+        # - no Last-Modified in headers
+        # => Do the download
+        log.info(f"[DOWNLOAD] Fetching {filename} from {file_url}...")
+        dl_resp = requests.get(file_url, timeout=120)
+        dl_resp.raise_for_status()
+
+        with open(filepath, 'wb') as f:
+            f.write(dl_resp.content)
+        size_kb = os.path.getsize(filepath) / 1024
+        log.info(f"[DONE] Saved {filename} -> {filepath} ({size_kb:.2f} KB)")
+
+    except requests.exceptions.RequestException as re:
+        log.error(f"[ERROR] Request failed for {filename}: {re}")
+        raise
+    except Exception as e:
+        log.error(f"[ERROR] General failure for {filename}: {e}")
+        raise
+
+
+def load_table_to_postgres(file_key: str) -> None:
     table_name = f"imdb_{file_key}"
+    config = TABLE_CONFIGS[file_key]
     columns = config['columns']
     expected_col_count = config['column_count']
 
-    # Step 1: Create table from schema
+    hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
+    conn = hook.get_conn()
+    cur = conn.cursor()
+
     schema_file_path = os.path.join(SCHEMA_DIR, f"{table_name}.sql")
-    log.info(f"[SCHEMA] Executing SQL for table: {table_name}")
-    with open(schema_file_path, 'r') as schema_file:
-        create_sql = schema_file.read()
-        cur.execute(create_sql)
-        conn.commit()
-        log.info(f"[TABLE CREATED] {table_name}")
-
-    # Step 2: File check and truncate
     gz_path = os.path.join(DOWNLOAD_DIR, IMDB_FILES[file_key])
-    if not os.path.exists(gz_path) or os.path.getsize(gz_path) < 1000:
-        log.warning(f"[SKIP] File missing or too small: {gz_path}")
-        return
 
-    log.info(f"[TRUNCATE] Clearing table {table_name} for fresh load...")
-    cur.execute(f"TRUNCATE TABLE {table_name};")
-    conn.commit()
+    try:
+        # 1) Create table
+        create_table_if_not_exists(cur, schema_file_path, table_name)
+        conn.commit()
 
-    # Step 3: Prepare insertion
-    col_placeholder = ', '.join(columns)
-    val_placeholder = ', '.join(['%s'] * expected_col_count)
-    insert_query = f"INSERT INTO {table_name} ({col_placeholder}) VALUES ({val_placeholder});"
+        # 2) Quick file check
+        if not os.path.exists(gz_path) or os.path.getsize(gz_path) < 1000:
+            log.warning(f"[SKIP] {gz_path} is missing or too small.")
+            return
 
-    # Read and insert data
-    row_count = 0
-    batch_size = 10000 # Can be tweaked based on system resources
-    batch = []
-    log.info(f"[LOADING] Reading data from {gz_path}")
-    with gzip.open(gz_path, 'rt', encoding='utf-8') as f:
-        next(f)  # Skip header
-        for i, line in enumerate(f, start=1):
-            values = [sanitize_value(v) for v in line.strip().split('\t')]
+        # 3) Truncate table
+        log.info(f"[TRUNCATE] Clearing table {table_name}...")
+        cur.execute(f"TRUNCATE TABLE {table_name};")
+        conn.commit()
 
-            if len(values) == expected_col_count:
-                
-                batch.append(values)
-                row_count += 1
+        # 4) Count total lines (Pass 1)
+        with gzip.open(gz_path, 'rt', encoding='utf-8') as f:
+            total_lines = sum(1 for _ in f) - 1  # minus header line
+        log.info(f"[INFO] Found {total_lines:,} lines (excluding header).")
+
+        # 5) Insert in batches (Pass 2)
+        batch_size = 50_000
+        insert_query = f"""
+            INSERT INTO {table_name} ({', '.join(columns)}) 
+            VALUES ({', '.join(['%s'] * expected_col_count)});
+        """
+
+        batch = []
+        row_count = 0
+
+        with gzip.open(gz_path, 'rt', encoding='utf-8') as f:
+            next(f)  # skip header
+            for i, line in enumerate(f, start=1):
+                values = [sanitize_value(v) for v in line.strip().split('\t')]
+                if len(values) == expected_col_count:
+                    batch.append(values)
+                    row_count += 1
 
                 if len(batch) >= batch_size:
                     cur.executemany(insert_query, batch)
                     conn.commit()
-                    log.info(f"[INSERT] Inserted batch of {len(batch)} rows into {table_name} (total so far: {row_count})")
-                    batch = []
+                    log.info(
+                        f"[INSERT] {len(batch)} rows committed (total inserted: {row_count:,})."
+                    )
+                    batch.clear()
 
-            if i % 100000 == 0:
-                log.info(f"[PROGRESS] Processed {i} lines...")
+                # Log progress every 100k lines
+                if i % 100_000 == 0:
+                    pct = (i / total_lines) * 100
+                    log.info(f"[PROGRESS] {i:,}/{total_lines:,} lines ({pct:.2f}%) for {table_name}")
 
-    # Leftover rows batch
-    if batch:
-        cur.executemany(insert_query, batch)
-        conn.commit()
-        log.info(f"[INSERT] Inserted final {len(batch)} rows into {table_name}...")
+        # leftover rows
+        if batch:
+            cur.executemany(insert_query, batch)
+            conn.commit()
+            log.info(f"[INSERT] Final batch of {len(batch)} rows. Total inserted: {row_count:,}.")
 
-    # Sanity check
-    cur.execute(f"SELECT COUNT(*) FROM {table_name};")
-    result = cur.fetchone()[0]
-    log.info(f"[VERIFY] Row count in {table_name}: {result}")
+        # 6) Verify row count
+        cur.execute(f"SELECT COUNT(*) FROM {table_name};")
+        db_count = cur.fetchone()[0]
+        log.info(f"[VERIFY] DB row count: {db_count:,}. Inserted: {row_count:,}.")
 
-    cur.close()
-    conn.close()
+        if db_count != row_count:
+            log.warning(
+                f"[MISMATCH] Inserted {row_count:,} rows but have {db_count:,} in DB."
+            )
 
-    log.info(f"[LOAD DONE] Inserted {row_count} rows into {table_name}")
+    except Exception as e:
+        log.error(f"[ERROR] Loading data into {table_name} failed: {e}")
+        raise
+    finally:
+        cur.close()
+        conn.close()
 
-# -----------------------------
-# DAG Definition
-# -----------------------------
-def create_imdb_dag():
-    default_args = {
+
+
+# ----------------------------------------------------------------------------
+# 4. DAG Definition
+# ----------------------------------------------------------------------------
+
+dag = DAG(
+    dag_id="imdb_download_and_load_dag",
+    default_args={
         'start_date': datetime(2025, 1, 1),
-    }
+        'retries': 3,
+        'retry_delay': timedelta(minutes=5),
+        'execution_timeout': timedelta(hours=8),
+    },
+    schedule_interval="@daily",
+    catchup=False,
+    #max_active_runs=1,
+)
 
-    with DAG(
-        dag_id="imdb_download_and_load_dag",
-        default_args=default_args,
-        schedule_interval="@daily",
-        catchup=False
-    ) as dag:
+with dag:
+    for file_key in IMDB_FILES:
+        download = PythonOperator(
+            task_id=f"download_{file_key}",
+            python_callable=download_imdb_data,
+            op_args=[file_key]
+        )
 
-        for file_key in IMDB_FILES:
-            dl_task = PythonOperator(
-                task_id=f"download_{file_key}",
-                python_callable=download_imdb_data,
-                op_args=[file_key],
-            )
+        load = PythonOperator(
+            task_id=f"load_{file_key}_to_postgres",
+            python_callable=load_table_to_postgres,
+            op_args=[file_key]
+        )
 
-            ld_task = PythonOperator(
-                task_id=f"load_{file_key}_to_postgres",
-                python_callable=load_table_to_postgres,
-                op_args=[file_key],
-            )
-
-            dl_task >> ld_task  # Ensure download before load
-
-        return dag
-
-# Register DAG
-globals()['imdb_download_and_load_dag'] = create_imdb_dag()
+        download >> load
