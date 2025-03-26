@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS imdb_title_basics (
     titleType TEXT,
     primaryTitle TEXT,
     originalTitle TEXT,
-    isAdult BOOLEAN,
+    isAdult TEXT,
     startYear INT,
     endYear INT,
     runtimeMinutes INT,
