@@ -1,26 +1,48 @@
 FROM apache/airflow:latest-python3.8
 
+# Use root user to install system packages and copy files
 USER root
 
 ARG AIRFLOW_HOME=/opt/airflow
 
-# Add DAGs
-ADD dags /opt/airflow/dags
+# --------------------------------------------------
+# Install system dependencies (e.g. git)
+# --------------------------------------------------
+RUN apt-get update && \
+    apt-get install -y git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Add your custom security manager and JSON permissions
-ADD config/security/dag_permissions.json /opt/airflow/config/security/dag_permissions.json
+# --------------------------------------------------
+# Copy Airflow components into the container
+# --------------------------------------------------
 
-#  ADD your override module to Airflow's expected location
-ADD airflow/www/security/CustomSecurityManager.py /opt/airflow/airflow/www/security/CustomSecurityManager.py
+# DAGs folder
+COPY airflow/dags ${AIRFLOW_HOME}/dags
 
-# Switch to airflow user BEFORE installing packages
+# Custom DAG permissions JSON
+COPY airflow/config/auth/dag_permissions.json /opt/airflow/config/auth/dag_permissions.json
+
+# Custom SecurityManager override
+COPY airflow/config/auth/CustomSecurityManager.py /opt/airflow/config/auth/CustomSecurityManager.py
+
+# Optional: schemas and scripts
+COPY airflow/schemas ${AIRFLOW_HOME}/schemas
+COPY airflow/scripts ${AIRFLOW_HOME}/scripts
+
+# --------------------------------------------------
+# Python dependencies (switch to airflow user first)
+# --------------------------------------------------
+
 USER airflow
 
-# Install your Python requirements
 COPY requirements.txt .
 
 RUN pip install --upgrade pip && \
     pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
 
-# Switch back (good practice)
+# --------------------------------------------------
+# Best practice: drop back to Airflow's UID
+# --------------------------------------------------
+
 USER ${AIRFLOW_UID}

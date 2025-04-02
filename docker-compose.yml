@@ -1,37 +1,49 @@
 
 services:
+  # ------------------------
+  # PostgreSQL Service
+  # ------------------------
   postgres:
     image: postgres:12
     environment:
-      - POSTGRES_USER=airflow
-      - POSTGRES_PASSWORD=airflow
-      - POSTGRES_DB=airflow
+      - POSTGRES_USER=airflow         # Default PostgreSQL username
+      - POSTGRES_PASSWORD=airflow     # Default PostgreSQL password
+      - POSTGRES_DB=airflow           # Default PostgreSQL database
     ports:
-      - "5434:5432"
+      - "5434:5432"                   # Expose DB on host port 5434
 
+  # ------------------------
+  # Airflow Initialization
+  # Prepares metadata DB and Airflow folder structure
+  # ------------------------
   airflow-init:
     build:
       context: .
       dockerfile: Dockerfile
-    entrypoint: ./scripts/airflow-entrypoint.sh
-    command: version
+    entrypoint: /opt/airflow/scripts/airflow-entrypoint.sh 
+    command: version                  # Just checks the build and exits
     depends_on:
       - postgres
     env_file:
       - .env
     volumes:
-      - ./dags:/opt/airflow/dags
-      - ./config/security:/opt/airflow/config/security 
-      - ./airflow-logs:/opt/airflow/logs
-      - ./scripts:/opt/airflow/scripts
-      - ./schemas:/opt/airflow/schemas
+      - ./airflow/dags:/opt/airflow/dags                    # DAGs folder
+      - ./airflow/config/auth:/opt/airflow/config/auth      # Custom security manager + JSON perms
+      - ./airflow/logs:/opt/airflow/logs                    # Logs folder
+      - ./airflow/scripts:/opt/airflow/scripts              # Entrypoints & helpers
+      - ./airflow/schemas:/opt/airflow/schemas              # CREATE TABLE .sql files
+      - ./data_files:/opt/airflow/data_files                # TSV/TSV.GZ IMDb downloads
+      - ./dbt:/opt/airflow/dbt                              # dbt project mounted for later steps
 
-
+  # ------------------------
+  # Airflow Scheduler
+  # Triggers DAGs based on schedule or sensors
+  # ------------------------
   scheduler:
     build:
       context: .
       dockerfile: Dockerfile
-    entrypoint: ./scripts/airflow-entrypoint.sh
+    entrypoint: /opt/airflow/scripts/airflow-entrypoint.sh 
     command: scheduler
     restart: on-failure
     depends_on:
@@ -39,26 +51,31 @@ services:
     env_file:
       - .env
     ports:
-      - "8794:8793"
+      - "8794:8793"  # Optional, unused by default unless you expose extra services
     volumes:
-      - ./dags:/opt/airflow/dags
-      - ./config/security:/opt/airflow/config/security 
-      - ./airflow-logs:/opt/airflow/logs
-      - ./scripts:/opt/airflow/scripts
-      - ./schemas:/opt/airflow/schemas 
-
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/config/auth:/opt/airflow/config/auth
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/scripts:/opt/airflow/scripts
+      - ./airflow/schemas:/opt/airflow/schemas
+      - ./data_files:/opt/airflow/data_files
+      - ./dbt:/opt/airflow/dbt
     healthcheck:
-      test: ["CMD-SHELL", "[ -f /usr/local/airflow/airflow-webserver.pid ]"]
+      test: ["CMD-SHELL", "[ -f /usr/local/airflow/airflow-scheduler.pid ]"]
       interval: 30s
       timeout: 30s
       retries: 2
 
+  # ------------------------
+  # Airflow Webserver
+  # Main UI interface for monitoring DAGs
+  # ------------------------
   webserver:
     hostname: webserver
     build:
       context: .
       dockerfile: Dockerfile
-    entrypoint: ./scripts/airflow-entrypoint.sh
+    entrypoint: /opt/airflow/scripts/airflow-entrypoint.sh 
     command: webserver
     restart: always
     depends_on:
@@ -67,15 +84,15 @@ services:
       - .env
     environment:
       - AIRFLOW__WEBSERVER__RBAC=True
-      - AIRFLOW__WEBSERVER__SECURITY_MANAGER_CLASS=config.security.override_security_manager.CustomSecurityManager
-
+      - AIRFLOW__WEBSERVER__SECURITY_MANAGER_CLASS=config.auth.security.CustomSecurityManager
     volumes:
-      - ./dags:/opt/airflow/dags
-      - ./config/security:/opt/airflow/config/security 
-      - ./airflow-logs:/opt/airflow/logs
-      - ./scripts:/opt/airflow/scripts   
-      - ./schemas:/opt/airflow/schemas
-
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/config/auth:/opt/airflow/config/auth
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/scripts:/opt/airflow/scripts
+      - ./airflow/schemas:/opt/airflow/schemas
+      - ./data_files:/opt/airflow/data_files
+      - ./dbt:/opt/airflow/dbt
     ports:
       - "8080:8080"
     healthcheck:
