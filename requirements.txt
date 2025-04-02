@@ -2,3 +2,5 @@ boto3
 psycopg2-binary
 pandas
 requests
+dbt-core
+dbt-postgres
