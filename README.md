@@ -1,127 +1,200 @@
-```markdown
 # IMDb-ETE-Pipeline
 
 ## 1. Overview
 
-This project automates the **download, ingestion, and transformation** of IMDb data into a PostgreSQL database. It uses **Docker** and **Apache Airflow** to orchestrate daily loads, and it is prepared for **dbt** modeling and eventual **cloud deployment** (e.g., GCP or AWS). The pipeline showcases real-world data engineering techniques like **batching**, **idempotent loads**, **security/permissions**, and **robust logging**.
+This project automates the **download, ingestion, and transformation** of IMDb data into a PostgreSQL database. It uses **Docker** and **Apache Airflow** to orchestrate daily loads and is fully configured for **dbt modeling** and eventual **cloud deployment** (e.g., GCP or AWS). The pipeline showcases real-world data engineering techniques like **COPY loading**, **idempotent DAGs**, **user-specific permissions**, and **robust logging**.
 
-## 2. Roadmap
+> **Why this project?**  
+> I built this to simulate a production-ready ETL pipeline from scratch. The goal was to deepen my hands-on experience with orchestration (Airflow), bulk data ingestion (PostgreSQL `COPY`), project structure, and dbt-driven transformations — all inside a Dockerized and cloud-friendly setup.
 
-1. **Sprint 1**: Setup Airflow + Docker + test DAG (IMDb download)  
-2. **Sprint 2**: Load IMDb data into PostgreSQL (initially with batch inserts, then optimized using Postgres `COPY`)  
-3. **Sprint 3**: Transform data with dbt (cleaning & modeling)  
-4. **Sprint 4**: Deploy to Cloud, test scalability & performance
+## 2. Pipeline Architecture
 
-## 3. Current Progress
+```plaintext
++----------------+       +------------------------+       +-----------------------+       +---------------------+
+| IMDb Public    |       | Airflow DAGs (Python)  |       | PostgreSQL (raw data) |       | dbt (TBD)           |
+| .tsv.gz Files  |  -->  | download + load tasks  |  -->  | imdb_* tables created |  -->  | staging + models    |
++----------------+       +------------------------+       +-----------------------+       +---------------------+
+        |                        |                              |                              |
+        v                        v                              v                              v
+Downloaded daily      Tables created via SQL        Data loaded using COPY         Transformations & cleaning
+to `/dags/files/`     from `/schemas/*.sql`         or executemany fallback        with sources, staging, models
+```
 
-- **Airflow DAG**: `imdb_download_and_load_dag` downloads 7 IMDb datasets (title.basics, name.basics, etc.).
-- **Data Loading**: Uses `TRUNCATE` + **batch inserts** or **Postgres `COPY`** for efficient ingestion. 
-- **Null Handling**: IMDb’s `\N` fields are correctly mapped to `NULL`.
-- **Logging & Monitoring**: Detailed logs trace file downloads, table creations, row counts, and batch progress.
-- **Custom Security**: A `CustomSecurityManager` plus JSON config restrict certain DAGs to certain users.
-- **Next Step**: Integrate **dbt** for post-load transformations and schema modeling.
+## 3. Roadmap
 
-## 4. Changelog
+| Sprint | Goal                                      | Status |
+|--------|-------------------------------------------|--------|
+| 1      | Airflow + Docker setup                    | Done   |
+| 2      | PostgreSQL loading via COPY               | Done   |
+| 3      | dbt transformations (sources/models)      | Next   |
+| 4      | Cloud deployment & dashboard integration  | Planned|
 
-- **[2024-03-16]** Verified Docker volume binding (`/opt/airflow/dags/files` ↔ `./dags/files`).  
-- **[2024-03-17]** Added `psycopg2-binary` for PostgreSQL integration.  
-- **[2024-03-18]** Implemented custom DAG permissions via JSON + `CustomSecurityManager`.  
-- **[2024-03-18]** Externalized config to `.env` for a more efficient Docker build.  
-- **[2025-03-25]** Finalized batch loading with idempotency & logging. Investigated large-file memory usage.  
-- **[2025-03-26]** Switched some loads to **Postgres `COPY`** for massive datasets (faster ingestion).
+## 4. Current Progress
 
-## 5. Tools & Versions
+- Done **Airflow DAG** (`imdb_download_and_load_dag`) downloads 7 IMDb datasets.
+- Done **Efficient Loading** using `COPY` for large files, fallback to `executemany` for smaller datasets.
+- Done **Schema Creation** from versioned SQL files in `/schemas`.
+- Done **Idempotency** with `TRUNCATE` before each load.
+- Done **Detailed Logging** (download, row counts, insert progress).
+- Done **Custom DAG Permissions** with JSON control.
+- Done **dbt Configured** inside Docker, ready for modeling.
+
+## 5. Changelog
+
+- **[2024-03-16]** Volume binding verified: `/opt/airflow/dags/files ↔ ./dags/files`
+- **[2024-03-18]** Added `CustomSecurityManager` + JSON DAG restriction
+- **[2025-03-25]** Batch load implemented with `executemany`
+- **[2025-03-26]** Switched to PostgreSQL `COPY` for large datasets
+- **[2025-03-27]** Dockerfile updated with git + dbt setup
+- **[2025-03-27]** dbt debug passed inside container
+
+## 6. Tools & Versions
 
 - **Docker**: 24.0.x  
 - **Docker Compose**: 2.20.x  
-- **Python (in container)**: 3.8.x  
+- **Python (Airflow containers)**: 3.8.x  
 - **Airflow**: 2.10.5  
-- **PostgreSQL**: 12.x (via Docker)  
-- **Python Packages**: `requests`, `psycopg2-binary`, `boto3`, `shutil`, etc.
+- **PostgreSQL**: 12.x  
+- **dbt**: 1.8.7 (inside container)  
+- **Python Libs**: `requests`, `psycopg2-binary`, `dbt-core`, `dbt-postgres`, etc.
 
-## 6. Usage
+## 7. Setup
 
-### 6.1 Setup
+### Local Docker Environment
+
 ```bash
 git clone <repo-url>
-cd IMDb-ETE-Pipeline
+cd apache-airflow-dev-server
 docker compose up --build
 ```
-1. Airflow Web UI: [http://localhost:8080](http://localhost:8080)  
-2. Default Credentials: `admin / admin` (customize in `.env`)
 
-### 6.2 Trigger the DAG
-Manual CLI trigger inside the Airflow container:
-```bash
-docker exec -it <webserver_container_name> bash
-airflow dags trigger imdb_download_and_load_dag
+### Access Airflow UI
+- [http://localhost:8080](http://localhost:8080)  
+- Default credentials: `admin / admin`
+
+## 8. How the DAG Works
+
+1. **Download Logic**
+   - Files downloaded only if remote version is newer (`Last-Modified` header).
+   - Files stored in `dags/files/` (Docker volume).
+
+2. **Table Handling**
+   - Tables are created from `/schemas/*.sql` if not already present.
+   - Each load truncates existing data (idempotency).
+
+3. **Data Loading**
+   - For small/moderate files → `executemany` with 50000 batch size.
+   - For large tables (millions of rows) → optimized `COPY` with null & tab handling.
+   - Logs print progress every 100000 lines.
+
+4. **Validation**
+   - Final row count is checked via `SELECT COUNT(*)`.
+
+## 9. Logging & Monitoring
+
+All phases are logged:
+- File download start/end and size
+- Table creation, truncate
+- Progress in lines and percentage
+- COPY success or errors
+- Row count comparison
+
+Logs are viewable in the **Airflow UI** under each task.
+
+## 10. DAG Permissions
+
+Controlled via:
+- `CustomSecurityManager.py` in `airflow/config/auth/`
+- `dag_permissions.json` for mapping:
+
+```json
+{
+  "airflow": ["*"],
+  "andry": ["imdb_download_and_load_dag"]
+}
 ```
-Or click **Trigger DAG** in the Airflow UI.
 
-## 7. How It Works
-
-1. **Download Check**  
-   - Each dataset is downloaded if **remote** is newer (comparing `Last-Modified` with local timestamps).  
-   - Files are stored in `dags/files` (mounted in Docker).
-2. **Table Creation & Truncate**  
-   - Each table is created if needed using SQL in `schemas/`.  
-   - Truncated each run → ensures idempotent loads.
-3. **Data Loading**  
-   - For moderate data sizes, we used **batch `executemany`**.  
-   - For very large tables (millions of rows), we switched to **`COPY`** for speed, using `FORMAT TEXT`, tab delimiter, and `NULL '\N'`.  
-   - Logs track insert/copy progress every 50k–100k lines.
-4. **Verification**  
-   - Final `SELECT COUNT(*)` for each table to confirm loaded rows match expectations.
-
-## 8. Logging & Monitoring
-
-- **Download**: start/end times, local vs. remote timestamps.  
-- **Load**: table creation, truncation, batch or `COPY` progress, row counts.  
-- **Failures**: immediate logs with stack traces in Airflow UI.
-
-## 9. Security & Permissions
-
-- **`CustomSecurityManager`**: Restricts which DAGs each user can see.  
-- **`dag_permissions.json`**: Maps users to DAGs:
-  ```json
-  {
-    "airflow": ["dag1", "dag2"],
-    "andry": ["imdb_download_and_load_dag"]
-  }
-  ```
-
-## 10. Folder Structure
+## 11. Folder Structure
 
 ```plaintext
 .
-├── dags/
-│   ├── files/                # IMDb data files (TSV, etc.)
-│   └── imdb_download_dag.py  # Main DAG
-├── schemas/                  # CREATE TABLE scripts for Postgres
-├── config/security/
-│   └── dag_permissions.json  # DAG permission mapping
-├── airflow/www/security/
-│   └── CustomSecurityManager.py
-├── scripts/
-│   └── airflow-entrypoint.sh  # Docker entrypoint if needed
+├── dags/                           # Airflow DAGs
+│   ├── imdb_download_dag.py        # Main DAG file
+│   └── files/                      # Downloaded data files
+├── schemas/                        # SQL CREATE TABLE files
+│   ├── imdb_title_basics.sql
+│   ├── imdb_title_akas.sql
+│   ├── imdb_title_ratings.sql
+│   └── ...
+├── logs/                           # Logs volume
+├── config/
+│   └── auth/
+│       ├── dag_permissions.json
+│       └── CustomSecurityManager.py
+├── dbt/                            # dbt project
+│   ├── dbt_project.yml            # Main dbt configuration file
+│   ├── profiles.yml               # Connection profiles
+│   ├── models/                    # dbt models directory
+│   │   ├── staging/              # Staging models
+│   │   │   └── imdb/            # IMDb staging schemas
+│   │   ├── marts/               # Business-specific models
+│   │   └── core/                # Core models
+│   ├── macros/                   # Custom SQL macros
+│   ├── seeds/                    # Static reference data
+│   ├── snapshots/                # Slowly changing dimensions
+│   ├── analyses/                 # SQL explorations
+│   └── tests/                    # Custom dbt tests
 ├── docker-compose.yml
 ├── Dockerfile
 ├── .env
 ├── requirements.txt
+├── SCHEMA.md                      # Database schema documentation
 └── README.md
 ```
 
-## 11. Performance Notes
+## 12. dbt Status
 
-- **Batch Size**: Usually 50k–100k is a sweet spot for `executemany`.  
-- **`COPY`**: Much faster for tens of millions of rows, but can require data “cleanliness” (e.g., correct tab counts).  
-- **Null Handling**: `\N` → `NULL` is recognized with `NULL '\\N'`.  
-- **Scheduler Heartbeat**: For large loads, ensure frequent logging or adequate timeouts.
+- Done Installed inside container
+- Done `dbt debug` successfully connects to Postgres
+- Done `profiles.yml` and `dbt_project.yml` are under `/opt/airflow/dbt/`
+- Next: define `sources`, `staging`, `models`
 
-## 12. Next Steps
+## 13. Performance Notes
 
-- [ ] **dbt Transformations**: Define sources pointing to `imdb_*` tables, build staging/analytics models.  
-- [ ] **Retry Logic**: Re-download or reload on partial failures.  
-- [ ] **Optional**: More graceful “table exists” checks, migrations for schema changes.  
-- [ ] **Cloud Deployment**: Switch local volumes to S3/GCS, run on GCP Composer or AWS MWAA for production scale.
-```
+- `COPY` is **10x faster** than batch insert for huge files.
+- `\N` handled correctly as `NULL` in PostgreSQL.
+- Progress bars and row validation implemented.
+- Airflow `execution_timeout` extended to handle large batches.
+
+## 14. Next Steps
+
+- [ ] Create initial **staging models** in dbt for each IMDb table  
+- [ ] Use `sources` in `schema.yml` for dbt best practices  
+- [ ] Explore **dbt tests**, `unique`, `not_null`, etc.  
+- [ ] Optionally: connect **Metabase** or **Superset** to PostgreSQL  
+- [ ] Prepare for **cloud deployment** (e.g. GCS volumes, GCP Composer)
+
+## 15. Future Improvements
+
+- [ ] Add retry logic for flaky downloads  
+- [ ] Add test DAG for verifying dbt transformations  
+- [ ] CI/CD pipeline for DAG + dbt deployment  
+- [ ] Archive old raw files to cloud storage
+
+## 16. Database Schema
+
+For detailed information about the IMDb database schema including table structures, column descriptions, relationships, and usage examples, please refer to the [SCHEMA.md](SCHEMA.md) file in this repository.
+
+Key tables in the IMDb dataset:
+
+| Table | Description | Primary Key | Notable Columns |
+|-------|-------------|------------|----------------|
+| imdb_title_basics | Core title data | tconst | titleType, primaryTitle, startYear |
+| imdb_title_ratings | User ratings | tconst | averageRating, numVotes |
+| imdb_name_basics | Person information | nconst | primaryName, birthYear, knownForTitles |
+| imdb_title_crew | Directors and writers | tconst | directors, writers |
+| imdb_title_principals | Cast and crew | tconst + ordering | nconst, category |
+| imdb_title_akas | Alternative titles | titleId + ordering | title, region, language |
+| imdb_title_episode | TV episode data | tconst | parentTconst, seasonNumber, episodeNumber |
+
+The schema is designed for performant queries with appropriate indexes on join columns and frequent filter conditions.
