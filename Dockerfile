@@ -26,9 +26,6 @@ COPY airflow/config/auth/dag_permissions.json /opt/airflow/config/auth/dag_permi
 # Custom SecurityManager override
 COPY airflow/config/auth/CustomSecurityManager.py /opt/airflow/config/auth/CustomSecurityManager.py
 
-# Optional: schemas and scripts
-COPY airflow/schemas ${AIRFLOW_HOME}/schemas
-COPY airflow/scripts ${AIRFLOW_HOME}/scripts
 
 # --------------------------------------------------
 # Python dependencies (switch to airflow user first)

@@ -30,7 +30,7 @@ log = LoggingMixin().log
 # ----------------------------------------------------------------------------
 
 DOWNLOAD_DIR = os.environ.get('IMDB_DOWNLOAD_DIR', '/opt/airflow/data/files')
-SCHEMA_DIR = os.environ.get('IMDB_SCHEMA_DIR', '/opt/airflow/airflow/schemas')
+SCHEMA_DIR = os.environ.get('IMDB_SCHEMA_DIR', '/opt/airflow/schemas')
 POSTGRES_CONN_ID = os.environ.get('POSTGRES_CONN_ID', 'my_postgres')
 
 BASE_URL = 'https://datasets.imdbws.com/'

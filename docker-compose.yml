@@ -21,18 +21,19 @@ services:
       context: .
       dockerfile: Dockerfile
     entrypoint: /opt/airflow/scripts/airflow-entrypoint.sh 
-    command: version                  # Just checks the build and exits
+    command: version                
     depends_on:
       - postgres
     env_file:
       - .env
     volumes:
+    # Map host directory -> container directory
       - ./airflow/dags:/opt/airflow/dags                    # DAGs folder
       - ./airflow/config/auth:/opt/airflow/config/auth      # Custom security manager + JSON perms
       - ./airflow/logs:/opt/airflow/logs                    # Logs folder
       - ./airflow/scripts:/opt/airflow/scripts              # Entrypoints & helpers
-      - ./airflow/schemas:/opt/airflow/schemas              # CREATE TABLE .sql files
-      - ./data_files:/opt/airflow/data_files                # TSV/TSV.GZ IMDb downloads
+      - ./schemas:/opt/airflow/schemas                              # CREATE TABLE .sql files
+      - ./data/files:/opt/airflow/data/files                        # TSV/TSV.GZ IMDb downloads
       - ./dbt:/opt/airflow/dbt                              # dbt project mounted for later steps
 
   # ------------------------
@@ -51,14 +52,16 @@ services:
     env_file:
       - .env
     ports:
-      - "8794:8793"  # Optional, unused by default unless you expose extra services
+      - "8794:8793" 
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/config/auth:/opt/airflow/config/auth
       - ./airflow/logs:/opt/airflow/logs
       - ./airflow/scripts:/opt/airflow/scripts
-      - ./airflow/schemas:/opt/airflow/schemas
-      - ./data_files:/opt/airflow/data_files
+
+      - ./data/files:/opt/airflow/data/files
+      - ./schemas:/opt/airflow/schemas
+
       - ./dbt:/opt/airflow/dbt
     healthcheck:
       test: ["CMD-SHELL", "[ -f /usr/local/airflow/airflow-scheduler.pid ]"]
@@ -90,8 +93,10 @@ services:
       - ./airflow/config/auth:/opt/airflow/config/auth
       - ./airflow/logs:/opt/airflow/logs
       - ./airflow/scripts:/opt/airflow/scripts
-      - ./airflow/schemas:/opt/airflow/schemas
-      - ./data_files:/opt/airflow/data_files
+
+      - ./data/files:/opt/airflow/data/files
+      - ./schemas:/opt/airflow/schemas
+
       - ./dbt:/opt/airflow/dbt
     ports:
       - "8080:8080"
