@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: stg_title_basics
+    description: "Staging model for IMDb title basics"
+    columns:
+      - name: tconst
+        description: "Unique identifier for the title"
+        tests:
+          - not_null
+          - unique
+
+      - name: primary_title
+        description: "Primary title of the work"
+        tests:
+          - not_null
+
+      - name: original_title
+        description: "Original title of the work"
+
+      - name: is_adult
+        description: "True if adult content"
+        tests:
+          - accepted_values:
+              values: [true, false]
+
+      - name: start_year
+        description: "Year the title started"
+        tests: 
+          - not_null
+
+      - name: end_year
+        description: "Year the title ended"
+
+      - name: runtime_minutes
+        description: "Duration of the title"
+
+      - name: primary_genre
+        description: "First genre tag"
+        tests: 
+          - not_null
+
+      - name: secondary_genre
+        description: "Second genre tag"
+
+      - name: third_genre
+        description: "Third genre tag"

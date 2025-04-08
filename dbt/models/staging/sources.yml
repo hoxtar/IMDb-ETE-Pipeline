@@ -1,0 +1,28 @@
+version: 2
+
+sources:
+  - name: imdb
+    database: airflow          
+    schema: public              
+    tables:
+      - name: title_basics
+        description: "Raw IMDb title basics data loaded via Airflow into PostgreSQL"
+        identifier: imdb_title_basics  
+      - name: name_basics
+        description: "Raw IMDb name basics data"
+        identifier: imdb_name_basics
+      - name: title_akas
+        description: "Raw IMDb title akas data"
+        identifier: imdb_title_akas
+      - name: title_ratings
+        description: "Raw IMDb title ratings data"
+        identifier: imdb_title_ratings
+      - name: title_crew
+        description: "Raw IMDb title crew data"
+        identifier: imdb_title_crew
+      - name: title_episode
+        description: "Raw IMDb title episode data"
+        identifier: imdb_title_episode
+      - name: title_principals
+        description: "Raw IMDb title principals data"
+        identifier: imdb_title_principals
