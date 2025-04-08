@@ -14,6 +14,8 @@ sources:
       - name: title_akas
         description: "Raw IMDb title akas data"
         identifier: imdb_title_akas
+        meta:
+          model: false
       - name: title_ratings
         description: "Raw IMDb title ratings data"
         identifier: imdb_title_ratings
