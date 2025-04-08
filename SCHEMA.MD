@@ -94,5 +94,5 @@ This document provides a detailed description of each table schema used in the I
 These schemas will serve as a base for **dbt model creation**, enabling:
 - **Auto-generated documentation** via `dbt docs generate`
 - Schema evolution tracking
-- Data lineage visualization
-
+- **Data lineage** visualization
+s
