@@ -6,6 +6,7 @@
 
 SELECT
     tconst,
+    titletype AS title_type,
     primarytitle AS primary_title,
     originaltitle AS original_title,
     
