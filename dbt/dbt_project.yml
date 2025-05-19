@@ -18,7 +18,6 @@ models:
   imdb_dbt:
     staging:
       +materialized: view
-      +schema: stg
     intermediate:
       +materialized: view
     marts:
