@@ -7,7 +7,12 @@
 SELECT
     tconst,
     titletype AS title_type,
-    primarytitle AS primary_title,
+
+    CASE
+        WHEN primarytitle LIKE 'Episode #%.%' THEN REGEXP_REPLACE(primarytitle, 'Episode #(\d+)\.(\d+)', 'S\1.E\2')
+        ELSE primarytitle
+    END AS primary_title,
+
     originaltitle AS original_title,
     
     CASE isAdult

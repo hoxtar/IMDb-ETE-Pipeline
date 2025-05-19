@@ -1,0 +1,121 @@
+version: 2
+
+models:
+  - name: int_title_with_ratings
+    description: "Combined info from stg_title_basics and stg_title_ratings"
+    columns:
+      - name: tconst
+        description: "Unique identifier for the title"
+        tests:
+          - not_null
+      - name: title_type
+      - name: primary_title
+      - name: runtime_minutes
+      - name: primary_genre
+      - name: secondary_genre
+      - name: third_genre
+      - name: is_adult
+      - name: start_year
+      - name: average_rating
+      - name: num_votes
+
+  - name: int_title_with_genres
+    description: "Normalized genre data from title_basics"
+    columns:
+      - name: tconst
+        description: "Title identifier"
+        tests:
+          - not_null
+      - name: genre
+        description: "Individual genre"
+        tests:
+          - not_null
+      - name: genre_rank
+        description: "Rank of importance (1=primary, 2=secondary, 3=third)"
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - tconst
+            - genre
+
+  - name: int_person_filmography
+    description: "Comprehensive filmography combining all roles a person has"
+    columns:
+      - name: tconst
+        description: "Title identifier"
+        tests:
+          - not_null
+      - name: nconst
+        description: "Person identifier"
+        tests:
+          - not_null
+      - name: role
+        description: "Role/category (actor, director, writer, etc.)"
+        tests:
+          - not_null
+      - name: characters
+        description: "Character name if applicable"
+      - name: title
+        description: "Title of the work"
+      - name: start_year
+        description: "Release year"
+      - name: primary_genre
+        description: "Primary genre of the work"
+      - name: person_name
+        description: "Name of the person"
+
+  - name: int_title_hierarchies
+    description: "TV series and their episodes relationships"
+    columns:
+      - name: episode_tconst
+        description: "Episode identifier"
+        tests:
+          - not_null
+          - unique
+      - name: series_tconst
+        description: "Series identifier"
+        tests:
+          - not_null
+      - name: episode_title
+        description: "Episode title"
+      - name: series_title
+        description: "Series title"
+      - name: season_number
+        description: "Season number"
+      - name: episode_number
+        description: "Episode number"
+      - name: episode_year
+        description: "Episode release year"
+      - name: series_start_year
+        description: "Series start year"
+      - name: series_end_year
+        description: "Series end year"
+
+  - name: int_title_complete
+    description: "Comprehensive title information with ratings and contributor counts"
+    columns:
+      - name: tconst
+        description: "Title identifier"
+        tests:
+          - not_null
+          - unique
+      - name: title_type
+      - name: primary_title
+      - name: original_title
+      - name: is_adult
+      - name: start_year
+      - name: end_year
+      - name: runtime_minutes
+      - name: primary_genre
+      - name: secondary_genre
+      - name: third_genre
+      - name: average_rating
+      - name: num_votes
+      - name: director_count
+        description: "Number of directors for the title"
+      - name: writer_count
+        description: "Number of writers for the title"
+      - name: cast_count
+        description: "Number of cast members for the title"
