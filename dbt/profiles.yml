@@ -2,7 +2,7 @@ my_imdb_project:
   outputs:
     dev:
       type: postgres
-      host: postgres   
+      host: postgres
       user: airflow
       pass: airflow
       port: 5432

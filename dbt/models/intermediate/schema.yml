@@ -9,6 +9,9 @@ models:
         tests:
           - not_null
       - name: title_type
+        tests:
+          - accepted_values:
+              values: ['movie', 'short', 'tvEpisode', 'tvMovie', 'tvSeries', 'tvMiniSeries', 'tvSpecial', 'tvShort', 'video', 'videoGame']
       - name: primary_title
       - name: runtime_minutes
       - name: primary_genre
@@ -16,7 +19,17 @@ models:
       - name: third_genre
       - name: is_adult
       - name: start_year
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 1850
+              max_value: 2030
       - name: average_rating
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 10
+              inclusive: true
       - name: num_votes
 
   - name: int_title_with_genres
@@ -55,6 +68,8 @@ models:
         description: "Role/category (actor, director, writer, etc.)"
         tests:
           - not_null
+          - accepted_values:
+              values: ['actor', 'actress', 'director', 'writer', 'producer']
       - name: characters
         description: "Character name if applicable"
       - name: title
@@ -92,6 +107,11 @@ models:
         description: "Series start year"
       - name: series_end_year
         description: "Series end year"
+    tests:
+      - relationships:
+          to: ref('stg_title_basics')
+          field: tconst
+          column_name: episode_tconst  # Specify which column to check
 
   - name: int_title_complete
     description: "Comprehensive title information with ratings and contributor counts"
@@ -119,3 +139,5 @@ models:
         description: "Number of writers for the title"
       - name: cast_count
         description: "Number of cast members for the title"
+    tests:
+      - dbt_utils.at_least_one

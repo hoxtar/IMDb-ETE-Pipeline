@@ -1,0 +1,50 @@
+version: 2
+
+models:
+  - name: mart_top_titles
+    description: "Highly-rated titles with additional analytics on cast and crew"
+    columns:
+      - name: tconst
+        description: "Title identifier"
+        tests:
+          - not_null
+          - unique
+      - name: rating_rank_in_type
+        description: "Ranking within title type based on rating and vote count"
+      - name: rating_rank_in_genre
+        description: "Ranking within genre based on rating and vote count"
+
+  - name: mart_genre_analytics
+    description: "Genre performance trends across different decades"
+    columns:
+      - name: genre
+        description: "Genre name"
+        tests:
+          - not_null
+          - unique
+      - name: avg_rating
+        description: "Average rating across all titles in the genre"
+      - name: high_rated_count
+        description: "Count of titles with rating >= 8.0 and >5000 votes"
+
+  - name: mart_person_career
+    description: "Career analysis for actors, directors, and other film professionals"
+    columns:
+      - name: nconst
+        description: "Person identifier"
+        tests:
+          - not_null
+          - unique
+      - name: career_span_years
+        description: "Number of years between first and last known work"
+
+  - name: mart_series_analytics
+    description: "TV series analysis including episode ratings and trends"
+    columns:
+      - name: series_tconst
+        description: "Series identifier"
+        tests:
+          - not_null
+          - unique
+      - name: rating_trend
+        description: "Whether series ratings are improving, declining, or stable over seasons"
