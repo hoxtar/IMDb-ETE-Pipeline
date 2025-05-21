@@ -1,33 +1,35 @@
 # IMDb dbt Project
 
-This project transforms and tests IMDb data loaded into PostgreSQL using dbt (data build tool). The data is sourced from IMDb TSV files loaded through Airflow, and then processed into cleaned staging models for analysis.
+This project transforms and tests IMDb data loaded into PostgreSQL using dbt (data build tool). The data is sourced from IMDb TSV files loaded through Airflow, and then processed into analytics-ready models.
 
 ## Project Architecture
 
 ```
 dbt/
-├── models/                    # Main data models
-│   ├── staging/               # First-level transformations 
-│   │   ├── stg_name_basics.sql       # Person information
-│   │   ├── stg_title_basics.sql      # Core title data
+├── models/                # Main data models
+│   ├── staging/           # First-level transformations
+│   │   ├── stg_name_basics.sql           # Person information
+│   │   ├── stg_title_basics.sql          # Core title data
 │   │   ├── stg_title_crew_directors.sql  # Normalized directors
 │   │   ├── stg_title_crew_writers.sql    # Normalized writers
-│   │   ├── stg_title_episode.sql     # TV episode data
-│   │   ├── stg_title_principals.sql  # Cast and crew
-│   │   ├── stg_title_ratings.sql     # User ratings
-│   │   ├── schema.yml                # Model documentation & tests
-│   │   └── sources.yml               # Source definitions
-│   ├── intermediate/           # Currently empty (planned)
-│   └── marts/                  # Currently empty (planned)
-├── analyses/                 # SQL analyses (not materialized)
-├── macros/                   # Custom dbt macros
-├── snapshots/                # Version history tracking
-├── seeds/                    # Static CSV reference data
-├── tests/                    # Custom data tests
-├── packages.yml              # dbt_utils package dependency
-├── package-lock.yml          # Locked package versions
-├── profiles.yml              # Connection profiles
-└── dbt_project.yml           # Project configuration
+│   │   ├── stg_title_episode.sql         # TV episode data
+│   │   ├── stg_title_principals.sql      # Cast and crew
+│   │   ├── stg_title_ratings.sql         # User ratings
+│   │   ├── schema.yml                    # Model documentation & tests
+│   │   └── sources.yml                   # Source definitions
+│   ├── intermediate/      # Refined data models
+│   │   ├── int_title_with_ratings.sql    # Titles with ratings joined
+│   │   ├── int_title_with_genres.sql     # Normalized genre data
+│   │   ├── int_person_filmography.sql    # Comprehensive filmography
+│   │   ├── int_title_hierarchies.sql     # Series-episode relationships
+│   │   ├── int_title_complete.sql        # Complete title information
+│   │   └── schema.yml                    # Documentation & tests
+│   └── marts/            # Business-ready data models
+│       ├── mart_top_titles.sql           # Highly-rated content analysis
+│       ├── mart_genre_analytics.sql      # Genre performance by decade
+│       ├── mart_person_career.sql        # Career statistics
+│       ├── mart_series_analytics.sql     # Series ratings analysis
+│       └── schema.yml                    # Documentation & tests
 ```
 
 ## Data Sources

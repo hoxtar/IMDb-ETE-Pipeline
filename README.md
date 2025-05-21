@@ -40,17 +40,21 @@ to `/data/files/`     from `/schemas/*.sql`         or executemany fallback     
 - **Docker Setup** with properly isolated services for PostgreSQL, Airflow webserver, and scheduler.
 
 ### dbt Progress
-- **Sources Defined**: All 7 IMDb raw tables are defined in `sources.yml` with proper documentation.
-- **Staging Models Implemented**: 
-  - `stg_title_basics` - Core title data with genre splitting into primary/secondary/third
-  - `stg_name_basics` - Person information with profession/known titles normalization
-  - `stg_title_crew_directors` - Normalized directors from array to individual rows
-  - `stg_title_crew_writers` - Normalized writers from array to individual rows
-  - `stg_title_episode` - TV episode data with proper column naming
-  - `stg_title_principals` - Cast and crew information
-  - `stg_title_ratings` - User ratings data
-- **Testing Framework**: Comprehensive tests including `not_null`, `unique`, `accepted_values`, and combination tests.
-- **Documentation**: Detailed model documentation in `schema.yml` for all columns and models.
+- **Sources Defined**: All 7 IMDb raw tables are defined with proper documentation.
+- **Staging Models Implemented**: Complete set of staging models with proper transformations.
+- **Intermediate Models Implemented**:
+  - `int_title_with_ratings` - Titles joined with ratings data
+  - `int_title_with_genres` - Normalized genre structure
+  - `int_person_filmography` - Comprehensive role information
+  - `int_title_hierarchies` - TV series and episodes relationships
+  - `int_title_complete` - Comprehensive title information with counts
+- **Mart Models Implemented**:
+  - `mart_top_titles` - Ranking and analytics for highly-rated content
+  - `mart_genre_analytics` - Performance trends across genres and decades
+  - `mart_person_career` - Career statistics for industry professionals
+  - `mart_series_analytics` - TV series trends and episode analysis
+- **Testing Framework**: Comprehensive tests including `not_null`, `unique`, `accepted_values`, and more.
+- **Documentation**: Detailed model documentation in schema files for all columns and models.
 
 ## 5. Tools & Versions
 
@@ -194,7 +198,7 @@ apache-airflow-dev-server/
 
 ## 9. Next Steps
 
-- [ ] Add intermediate and mart layer dbt models for analytics
+- [x] Add intermediate and mart layer dbt models for analytics
 - [ ] Implement data quality checks and monitoring
 - [ ] Add dashboard integration with Superset or Metabase
 - [ ] Deploy to cloud environment (AWS/GCP/Azure)
