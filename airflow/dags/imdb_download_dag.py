@@ -151,6 +151,12 @@ def fetch_imdb_dataset(file_key: str) -> None:
 
     while retry_count < max_retries:
         try:
+            # Attempt to fetch headers first to check Last-Modified date
+            log.info(f"[CHECK] Checking Last-Modified for {filename}...")
+            head_resp = requests.head(file_url, timeout=30)
+            head_resp.raise_for_status()
+            remote_last_modified_str = head_resp.headers.get('Last-Modified')
+
             # Proceed with download if any of:
             # 1. File doesn't exist locally
             # 2. Remote version is newer
@@ -178,15 +184,15 @@ def fetch_imdb_dataset(file_key: str) -> None:
             # - remote is newer, or
             # - no Last-Modified in headers
             # => Do the download
-            dl_resp = requests.get(file_url, timeout=120)
             log.info(f"[DOWNLOAD] Fetching {filename} from {file_url}...")
+            dl_resp = requests.get(file_url, timeout=120)
             dl_resp.raise_for_status()
 
             with open(filepath, 'wb') as f:
                 f.write(dl_resp.content)
             size_kb = os.path.getsize(filepath) / 1024
             log.info(f"[DONE] Saved {filename} -> {filepath} ({size_kb:.2f} KB)")
-            break
+            return
             
         #Granular error handling
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
@@ -198,7 +204,8 @@ def fetch_imdb_dataset(file_key: str) -> None:
             time.sleep(2 ** retry_count)
     
         except requests.exceptions.HTTPError as he:
-            log.error(f"[ERROR] HTTP error for {filename}: {he}")
+            status_code = he.response.status_code if he.response else 'Unknown'
+            log.error(f"[ERROR] HTTP {status_code} error for {filename}: {he}")
             raise
 
 
