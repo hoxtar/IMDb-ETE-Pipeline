@@ -1,18 +1,39 @@
 """
-Airflow DAG: IMDb Data Download and Load via Postgres COPY
+IMDb Data Pipeline DAG
+=====================
+
+A production-ready Airflow DAG that maintains an up-to-date copy of IMDb datasets.
+
+Features:
+    - Smart downloading with Last-Modified checks
+    - Efficient PostgreSQL bulk loading via COPY
+    - Robust error handling with retries
+    - Automatic cleanup of temporary files
+
+Datasets Handled:
+    - Title basics (movies, TV shows)
+    - Title ratings
+    - Name basics (people)
+    - Title crews
+    - Title episodes
+    - Alternative titles
+    - Principal cast/crew
+
+Technical Details:
+    - Source: IMDb TSV files (gzipped)
+    - Target: PostgreSQL tables
+    - Schedule: Daily
+    - Timeout: 2 hours
+    - Retries: 3 (5-minute delay)
+
 Author: Andrea Usai
-Description:
-  This DAG downloads IMDb TSV files and loads them into a Postgres database 
-  using the COPY command for efficient bulk ingestion. 
-  It demonstrates 
-  best practices in logging, error handling, and a clear structure 
-  for a robust data pipeline.
 """
 
 import os
 import gzip
 import shutil
 import requests
+import time
 
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
@@ -108,73 +129,94 @@ def create_table_if_not_exists(cur, schema_file_path: str, table_name: str):
 # 3. Task Functions
 # ----------------------------------------------------------------------------
 
-def download_imdb_data(file_key: str) -> None:
+def fetch_imdb_dataset(file_key: str) -> None:
     """
-    Downloads the IMDb file from the official URL. 
-    Uses 'Last-Modified' headers to skip if local copy is up-to-date.
+    Downloads and caches an IMDb dataset file if newer version exists.
+    
+    Args:
+        file_key: Key identifying which IMDb dataset to download (e.g., 'title_basics')
+    
+    Features:
+        - Checks remote file's Last-Modified date before downloading
+        - Implements retry logic for network failures
+        - Maintains local cache of downloaded files
     """
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
     filename = IMDB_FILES[file_key]
     file_url = BASE_URL + filename
     filepath = os.path.join(DOWNLOAD_DIR, filename)
 
-    try:
-        # HEAD request for Last-Modified
-        head_resp = requests.head(file_url, timeout=30)
-        head_resp.raise_for_status()
+    max_retries = 3
+    retry_count = 0
 
-        remote_last_modified_str = head_resp.headers.get('Last-Modified')
+    while retry_count < max_retries:
+        try:
+            # Proceed with download if any of:
+            # 1. File doesn't exist locally
+            # 2. Remote version is newer
+            # 3. Cannot verify file freshness (no Last-Modified header)
+            if os.path.exists(filepath):
+                local_timestamp = os.path.getmtime(filepath)
+                # Create a timezone-aware UTC datetime object directly:
+                local_dt = datetime.fromtimestamp(local_timestamp, timezone.utc)
+                log.info(f"[LOCAL] {filepath} last modified: {local_dt.isoformat()}")
 
-        if os.path.exists(filepath):
-            local_timestamp = os.path.getmtime(filepath)
-            # Create a timezone-aware UTC datetime object directly:
-            local_dt = datetime.fromtimestamp(local_timestamp, timezone.utc)
-            log.info(f"[LOCAL] {filepath} last modified: {local_dt.isoformat()}")
-
-            if remote_last_modified_str:
-                remote_dt = parsedate_to_datetime(remote_last_modified_str)
-                
-                if local_dt >= remote_dt:
-                    log.info(f"[SKIP] Local is up-to-date.")
-                    return
+                if remote_last_modified_str:
+                    remote_dt = parsedate_to_datetime(remote_last_modified_str)
+                    
+                    if local_dt >= remote_dt:
+                        log.info(f"[SKIP] Local is up-to-date.")
+                        return
+                    else:
+                        log.info(f"[RE-DOWNLOAD] Local is older.")
                 else:
-                    log.info(f"[RE-DOWNLOAD] Local is older.")
-            else:
-                log.warning("[WARN] No 'Last-Modified' in response headers. Re-downloading anyway.")
+                    log.warning("[WARN] No 'Last-Modified' in response headers. Re-downloading anyway.")
 
 
-        # If we reach this point:
-        # - file doesn't exist, or
-        # - remote is newer, or
-        # - no Last-Modified in headers
-        # => Do the download
-        dl_resp = requests.get(file_url, timeout=120)
-        log.info(f"[DOWNLOAD] Fetching {filename} from {file_url}...")
-        dl_resp.raise_for_status()
+            # If we reach this point:
+            # - file doesn't exist, or
+            # - remote is newer, or
+            # - no Last-Modified in headers
+            # => Do the download
+            dl_resp = requests.get(file_url, timeout=120)
+            log.info(f"[DOWNLOAD] Fetching {filename} from {file_url}...")
+            dl_resp.raise_for_status()
 
-        with open(filepath, 'wb') as f:
-            f.write(dl_resp.content)
-        size_kb = os.path.getsize(filepath) / 1024
-        log.info(f"[DONE] Saved {filename} -> {filepath} ({size_kb:.2f} KB)")
-        
+            with open(filepath, 'wb') as f:
+                f.write(dl_resp.content)
+            size_kb = os.path.getsize(filepath) / 1024
+            log.info(f"[DONE] Saved {filename} -> {filepath} ({size_kb:.2f} KB)")
+            break
+            
+        #Granular error handling
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            retry_count += 1
+            if retry_count == max_retries:
+                log.error(f"[ERROR] Final attempt to download {filename} after {max_retries} retries")
+                raise
+            log.warning(f"[RETRY] Attempt {retry_count} of {max_retries}")
+            time.sleep(2 ** retry_count)
+    
+        except requests.exceptions.HTTPError as he:
+            log.error(f"[ERROR] HTTP error for {filename}: {he}")
+            raise
 
-    except requests.exceptions.RequestException as re:
-        log.error(f"[ERROR] Request failed for {filename}: {re}")
-        raise
-    except Exception as e:
-        log.error(f"[ERROR] General failure for {filename}: {e}")
-        raise
 
-
-def load_table_to_postgres_via_copy(file_key: str) -> None:
+def load_imdb_table(file_key: str) -> None:
     """
-    Loads IMDb TSV data into Postgres via COPY command to reduce latency.
-    Steps:
-      1) Create table if not exists.
-      2) TRUNCATE the table for idempotent load.
-      3) Decompress .gz into a temporary .tsv file (strip the header line).
-      4) Use COPY to load, specifying null placeholder and tab delimiter.
-      5) Validate row count in the DB matches the file lines.
+    Loads an IMDb dataset into PostgreSQL efficiently.
+    
+    Args:
+        file_key: Key identifying which IMDb dataset to load (e.g., 'title_basics')
+    
+    Process:
+        1. Validates/creates target table
+        2. Cleans existing data (TRUNCATE)
+        3. Extracts .gz file to temporary TSV
+        4. Bulk loads using PostgreSQL COPY
+        5. Verifies row count integrity
+    
+    Note: Automatically cleans up temporary files after loading
     """
     table_name = f"imdb_{file_key}"
     config = TABLE_CONFIGS[file_key]
@@ -281,13 +323,13 @@ with dag:
     for file_key in IMDB_FILES:
         download = PythonOperator(
             task_id=f"download_{file_key}",
-            python_callable=download_imdb_data,
+            python_callable=fetch_imdb_dataset,
             op_args=[file_key]
         )
 
         load_via_copy = PythonOperator(
             task_id=f"load_{file_key}_to_postgres",
-            python_callable=load_table_to_postgres_via_copy,
+            python_callable=load_imdb_table,
             op_args=[file_key]
         )
 
