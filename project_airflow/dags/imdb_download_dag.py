@@ -38,6 +38,7 @@ import time
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 
+import psycopg2
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.utils.log.logging_mixin import LoggingMixin
@@ -112,17 +113,21 @@ TABLE_CONFIGS = {
 # ----------------------------------------------------------------------------
 
 # Executes the SQL in schema_file_path to create a Postgres table if not already present
-def create_table_if_not_exists(cur, schema_file_path: str, table_name: str):
+def setup_table_schema(cur: psycopg2.extensions.cursor, schema_file_path: str, table_name: str):
     
     log.info(f"[SCHEMA] Creating table if not exists: {table_name}")
-    with open(schema_file_path, 'r', encoding='utf-8') as schema_file:
-        create_sql = schema_file.read()
-    # Validate SQL content to prevent SQL injection
-    if not create_sql.strip().lower().startswith("create table"):
-        log.error(f"[SECURITY] Invalid SQL detected in schema file: {schema_file_path}")
-        raise ValueError("Invalid SQL content in schema file.")
-    
-    cur.execute(create_sql)
+    try:
+        with open(schema_file_path, 'r', encoding='utf-8') as schema_file:
+            create_sql = schema_file.read()
+            # Validate SQL content to prevent SQL injection
+            if not create_sql.strip().lower().startswith("create table"):
+                log.error(f"[SECURITY] Invalid SQL detected in schema file: {schema_file_path}")
+                raise ValueError("Invalid SQL content in schema file.")
+    except Exception as e:
+        log.error(f"[ERROR] Error reading schema file: {e}")
+        raise
+    else:
+        cur.execute(create_sql)
 
 
 # ----------------------------------------------------------------------------
@@ -242,7 +247,7 @@ def load_imdb_table(file_key: str) -> None:
 
     try:
         # 1) Create table if needed
-        create_table_if_not_exists(cur, schema_file_path, table_name)
+        setup_table_schema(cur, schema_file_path, table_name)
         conn.commit()
 
         # 2) Quick file check
@@ -250,7 +255,9 @@ def load_imdb_table(file_key: str) -> None:
             log.warning(f"[SKIP] {gz_path} is missing or too small.")
             return
 
-        # TRUNCATE the table
+        # TRUNCATE the table to ensure clean data load
+        # This removes all existing rows for idempotency and data freshness
+        # Using TRUNCATE instead of DELETE for better performance
         log.info(f"[TRUNCATE] Clearing table {table_name}")
         cur.execute(f"TRUNCATE TABLE {table_name};")
         conn.commit()
@@ -269,8 +276,17 @@ def load_imdb_table(file_key: str) -> None:
             total_lines = sum(1 for _ in f)
         log.info(f"[INFO] {uncompressed_tsv_path} has {total_lines:,} data lines (excluding header).")
 
-        # 4) COPY into Postgres
-        # We specify NULL '\N' since IMDb uses \N for missing values
+        # 4) COPY into Postgres using high-performance bulk loading
+        # Benefits of COPY vs INSERT:
+        #   - 10-100x faster than individual INSERTs
+        #   - Reduced network overhead
+        #   - Minimal transaction logging
+        
+        # Configuration explained:
+        #   FORMAT TEXT      - Plain text input format (not CSV or binary)
+        #   DELIMITER E'\t'  - Tab-separated fields (TSV format)
+        #   NULL '\N'       - IMDb uses \N to represent NULL values
+        #   ENCODING 'UTF8' - Handle international characters correctly
         copy_sql = f"""
             COPY {table_name} ({', '.join(columns)})
             FROM STDIN
@@ -315,15 +331,37 @@ def load_imdb_table(file_key: str) -> None:
 # ----------------------------------------------------------------------------
 
 dag = DAG(
+    # Descriptive ID that clearly indicates DAG's purpose
     dag_id="imdb_download_and_load_dag",
+    
+    # Default arguments that apply to all tasks
     default_args={
+        # Future start date to avoid accidental backfilling
         'start_date': datetime(2025, 1, 1),
-        'retries': 3,
-        'retry_delay': timedelta(minutes=5),
+        
+        # Retry configuration for resilience
+        'retries': 3,  # Reasonable number of retries
+        'retry_delay': timedelta(minutes=5),  # Exponential backoff would be better
+        
+        # Safety timeout to prevent hanging tasks
         'execution_timeout': timedelta(hours=2),
+        
+        # Best practices that could be added:
+        # 'owner': 'data_team',  # Ownership tracking
+        # 'email_on_failure': True,  # Failure notifications
+        # 'email': ['team@example.com'],
+        # 'depends_on_past': False,  # Prevent task dependencies on previous runs
     },
+    
+    # Daily schedule is appropriate for IMDb updates
     schedule_interval="@daily",
+    
+    # Prevent accidental historical runs
     catchup=False,
+    
+    # Additional best practices that could be added:
+    # tags=['imdb', 'etl'],  # For better organization
+    # doc_md=__doc__,  # Add documentation from module docstring
 )
 
 with dag:

@@ -1,35 +1,85 @@
-# IMDb dbt Project
+# IMDb dbt Transformation Layer
 
-This project transforms and tests IMDb data loaded into PostgreSQL using dbt (data build tool). The data is sourced from IMDb TSV files loaded through Airflow, and then processed into analytics-ready models.
+[![dbt Version](https://img.shields.io/badge/dbt-1.8.7-purple)]()
+[![Models](https://img.shields.io/badge/Models-16%20Total-blue)]()
+[![Status](https://img.shields.io/badge/Status-Development-yellow)]()
 
-## Project Architecture
+## Overview
+
+This dbt project transforms raw IMDb data loaded by Airflow into analytics-ready dimensional models. The project follows best practices with a **staging → intermediate → marts** architecture.
+
+### Project Metrics
+- **16 Total Models**: 7 staging, 5 intermediate, 4 marts
+- **Multi-layer Architecture**: Staging → Intermediate → Marts
+- **Comprehensive Documentation**: All models documented
+- **Strategic Materialization**: Views for staging/intermediate, tables for marts
+
+## Architecture & Data Flow
+
+```
+Raw IMDb Tables          Staging Layer           Intermediate Layer        Marts Layer
+┌─────────────────┐      ┌──────────────────┐    ┌─────────────────────┐    ┌──────────────────┐
+│ imdb_title_     │  →   │ stg_title_       │ →  │ int_title_with_     │ →  │ mart_top_titles  │
+│ basics          │      │ basics           │    │ ratings             │    │                  │
+├─────────────────┤      ├──────────────────┤    ├─────────────────────┤    ├──────────────────┤
+│ imdb_name_      │  →   │ stg_name_        │ →  │ int_person_         │ →  │ mart_person_     │
+│ basics          │      │ basics           │    │ filmography         │    │ career           │
+├─────────────────┤      ├──────────────────┤    ├─────────────────────┤    ├──────────────────┤
+│ imdb_title_     │  →   │ stg_title_crew_  │ →  │ int_title_          │ →  │ mart_genre_      │
+│ crew            │      │ (directors/      │    │ complete            │    │ analytics        │
+│                 │      │  writers)        │    │                     │    │                  │
+├─────────────────┤      ├──────────────────┤    ├─────────────────────┤    ├──────────────────┤
+│ imdb_title_     │  →   │ stg_title_       │ →  │ int_title_          │ →  │ mart_series_     │
+│ episode         │      │ episode          │    │ hierarchies         │    │ analytics        │
+├─────────────────┤      ├──────────────────┤    └─────────────────────┘    └──────────────────┘
+│ imdb_title_     │  →   │ stg_title_       │
+│ principals      │      │ principals       │
+├─────────────────┤      ├──────────────────┤
+│ imdb_title_     │  →   │ stg_title_       │
+│ ratings         │      │ ratings          │
+├─────────────────┤      └──────────────────┘
+│ imdb_title_     │
+│ akas            │
+└─────────────────┘
+```
+
+## Project Structure
 
 ```
 dbt/
-├── models/                # Main data models
-│   ├── staging/           # First-level transformations
-│   │   ├── stg_name_basics.sql           # Person information
-│   │   ├── stg_title_basics.sql          # Core title data
-│   │   ├── stg_title_crew_directors.sql  # Normalized directors
-│   │   ├── stg_title_crew_writers.sql    # Normalized writers
-│   │   ├── stg_title_episode.sql         # TV episode data
-│   │   ├── stg_title_principals.sql      # Cast and crew
-│   │   ├── stg_title_ratings.sql         # User ratings
-│   │   ├── schema.yml                    # Model documentation & tests
-│   │   └── sources.yml                   # Source definitions
-│   ├── intermediate/      # Refined data models
-│   │   ├── int_title_with_ratings.sql    # Titles with ratings joined
-│   │   ├── int_title_with_genres.sql     # Normalized genre data
-│   │   ├── int_person_filmography.sql    # Comprehensive filmography
-│   │   ├── int_title_hierarchies.sql     # Series-episode relationships
-│   │   ├── int_title_complete.sql        # Complete title information
-│   │   └── schema.yml                    # Documentation & tests
-│   └── marts/            # Business-ready data models
-│       ├── mart_top_titles.sql           # Highly-rated content analysis
-│       ├── mart_genre_analytics.sql      # Genre performance by decade
-│       ├── mart_person_career.sql        # Career statistics
-│       ├── mart_series_analytics.sql     # Series ratings analysis
-│       └── schema.yml                    # Documentation & tests
+├── models/                       # 16 Total transformation models
+│   ├── staging/                  # 7 staging models (data cleaning)
+│   │   ├── stg_name_basics.sql           - Person data normalization
+│   │   ├── stg_title_basics.sql          - Title data with genre parsing
+│   │   ├── stg_title_crew_directors.sql  - Normalized director relationships
+│   │   ├── stg_title_crew_writers.sql    - Normalized writer relationships
+│   │   ├── stg_title_episode.sql         - TV episode data cleaning
+│   │   ├── stg_title_principals.sql      - Cast and crew normalization
+│   │   ├── stg_title_ratings.sql         - Ratings data validation
+│   │   ├── schema.yml                    - Model documentation & tests
+│   │   └── sources.yml                   - Source definitions with freshness
+│   ├── intermediate/             # 5 intermediate models (business logic)
+│   │   ├── int_title_with_ratings.sql    - Titles enriched with ratings
+│   │   ├── int_title_with_genres.sql     - Genre dimension modeling
+│   │   ├── int_person_filmography.sql    - Comprehensive career data
+│   │   ├── int_title_hierarchies.sql     - Series-episode relationships
+│   │   ├── int_title_complete.sql        - Complete title information
+│   │   └── schema.yml                    - Documentation & relationship tests
+│   └── marts/                    # 4 mart models (analytics-ready)
+│       ├── mart_top_titles.sql           - Ranking and performance analytics
+│       ├── mart_genre_analytics.sql      - Genre trends by decade
+│       ├── mart_person_career.sql        - Career statistics and achievements
+│       ├── mart_series_analytics.sql     - TV series and episode analysis
+│       └── schema.yml                    - Business metric documentation
+├── tests/generic/                # Custom data quality tests
+├── dbt_packages/dbt_utils/       # External packages for advanced functions
+├── dbt_project.yml               # Project configuration and materialization
+├── profiles.yml                  # Database connection profiles
+├── packages.yml                  # Package dependencies (dbt-utils)
+└── target/                       # Compiled SQL and documentation
+    ├── manifest.json             # Model lineage and dependencies
+    ├── run_results.json          # Execution results and performance
+    └── compiled/                 # Generated SQL for review
 ```
 
 ## Data Sources
