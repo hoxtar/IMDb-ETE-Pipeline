@@ -1,12 +1,1 @@
-boto3
-psycopg2-binary
-pandas
-requests
-dbt-core
-dbt-postgres
-pytest>=7.0.0
-pytest-cov>=4.0.0
-pytest-mock>=3.10.0
-great-expectations
-prometheus-client
-sqlalchemy
+# Astro Runtime includes the following pre-installed providers packages: https://www.astronomer.io/docs/astro/runtime-image-architecture#provider-packages
