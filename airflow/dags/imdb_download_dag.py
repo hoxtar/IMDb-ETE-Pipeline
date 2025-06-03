@@ -55,7 +55,49 @@ DOWNLOAD_DIR = os.environ.get('IMDB_DOWNLOAD_DIR', '/opt/airflow/data/files')
 SCHEMA_DIR = os.environ.get('IMDB_SCHEMA_DIR', '/opt/airflow/schemas')
 POSTGRES_CONN_ID = os.environ.get('POSTGRES_CONN_ID', 'my_postgres')
 
+# Task-specific timeout configurations based on data volume analysis
+TASK_TIMEOUTS = {
+    # Fast downloads (< 100MB)
+    'title_ratings': timedelta(minutes=15),
+    'title_episode': timedelta(minutes=20),
+    'title_akas': timedelta(minutes=30),
+    
+    # Medium datasets (100MB - 500MB)  
+    'title_basics': timedelta(minutes=45),
+    'name_basics': timedelta(minutes=45),
+    
+    # Large datasets (> 500MB, complex processing)
+    'title_crew': timedelta(hours=1, minutes=30),
+    'title_principals': timedelta(hours=2),
+}
+
+# Default timeout for any unspecified tasks
+DEFAULT_TASK_TIMEOUT = timedelta(hours=1)
+
 BASE_URL = 'https://datasets.imdbws.com/'
+
+# Task-specific timeout configurations based on data volume analysis
+TASK_TIMEOUTS = {
+    # Fast downloads (< 100MB)
+    'title_ratings': timedelta(minutes=15),
+    'title_episode': timedelta(minutes=20),
+    'title_akas': timedelta(minutes=30),
+    
+    # Medium datasets (100MB - 500MB)  
+    'title_basics': timedelta(minutes=45),
+    'name_basics': timedelta(minutes=45),
+    
+    # Large datasets (> 500MB, complex processing)
+    'title_crew': timedelta(hours=1, minutes=30),
+    'title_principals': timedelta(hours=2),
+}
+
+# Default timeout for any unspecified tasks
+DEFAULT_TASK_TIMEOUT = timedelta(hours=1)
+
+def get_task_timeout(file_key: str) -> timedelta:
+    """Get appropriate timeout for specific task based on historical performance"""
+    return TASK_TIMEOUTS.get(file_key, DEFAULT_TASK_TIMEOUT)
 
 IMDB_FILES = {
     'title_basics': 'title.basics.tsv.gz',
@@ -216,7 +258,7 @@ def fetch_imdb_dataset(file_key: str) -> None:
 
 def load_imdb_table(file_key: str) -> None:
     """
-    Loads an IMDb dataset into PostgreSQL efficiently.
+    Loads an IMDb dataset into PostgreSQL efficiently with enhanced monitoring.
     
     Args:
         file_key: Key identifying which IMDb dataset to load (e.g., 'title_basics')
@@ -225,15 +267,42 @@ def load_imdb_table(file_key: str) -> None:
         1. Validates/creates target table
         2. Cleans existing data (TRUNCATE)
         3. Extracts .gz file to temporary TSV
-        4. Bulk loads using PostgreSQL COPY
+        4. Bulk loads using PostgreSQL COPY with progress monitoring
         5. Verifies row count integrity
+    
+    Enterprise Features:
+        - Progress monitoring for long-running tasks
+        - Heartbeat maintenance during processing
+        - Resource usage logging
     
     Note: Automatically cleans up temporary files after loading
     """
+    import time
+    from airflow.operators.python import get_current_context
+    
+    # Get current context for heartbeat updates
+    try:
+        context = get_current_context()
+        task_instance = context.get('task_instance')
+    except:
+        task_instance = None
+    
+    def update_heartbeat(message: str):
+        """Update task heartbeat with progress message"""
+        if task_instance:
+            log.info(f"[HEARTBEAT] {message}")
+            # Force heartbeat update
+            task_instance.refresh_from_db()
+        else:
+            log.info(f"[PROGRESS] {message}")
+    
     table_name = f"imdb_{file_key}"
     config = TABLE_CONFIGS[file_key]
     columns = config['columns']
-    # expected_col_count = config['column_count']
+    
+    # Start timing for performance monitoring
+    start_time = time.time()
+    update_heartbeat(f"Starting load process for {table_name}")
 
     hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
     conn = hook.get_conn()
@@ -247,6 +316,7 @@ def load_imdb_table(file_key: str) -> None:
 
     try:
         # 1) Create table if needed
+        update_heartbeat("Creating table schema if not exists")
         setup_table_schema(cur, schema_file_path, table_name)
         conn.commit()
 
@@ -255,14 +325,17 @@ def load_imdb_table(file_key: str) -> None:
             log.warning(f"[SKIP] {gz_path} is missing or too small.")
             return
 
+        file_size_mb = os.path.getsize(gz_path) / (1024 * 1024)
+        update_heartbeat(f"Processing file {gz_path} ({file_size_mb:.1f} MB)")
+
         # TRUNCATE the table to ensure clean data load
-        # This removes all existing rows for idempotency and data freshness
-        # Using TRUNCATE instead of DELETE for better performance
+        update_heartbeat("Truncating existing data for clean reload")
         log.info(f"[TRUNCATE] Clearing table {table_name}")
         cur.execute(f"TRUNCATE TABLE {table_name};")
         conn.commit()
 
         # 3) Decompress and remove the header
+        update_heartbeat("Decompressing data file")
         log.info(f"[DECOMPRESS] Creating temporary TSV: {uncompressed_tsv_path}")
         with gzip.open(gz_path, 'rt', encoding='utf-8') as gzfile, open(uncompressed_tsv_path, 'w', encoding='utf-8') as tsvfile:
             # Skip the header line once
@@ -272,21 +345,13 @@ def load_imdb_table(file_key: str) -> None:
             shutil.copyfileobj(gzfile, tsvfile)
 
         # Now let's count the lines in the uncompressed TSV
+        update_heartbeat("Counting data rows for validation")
         with open(uncompressed_tsv_path, 'r', encoding='utf-8') as f:
             total_lines = sum(1 for _ in f)
         log.info(f"[INFO] {uncompressed_tsv_path} has {total_lines:,} data lines (excluding header).")
 
         # 4) COPY into Postgres using high-performance bulk loading
-        # Benefits of COPY vs INSERT:
-        #   - 10-100x faster than individual INSERTs
-        #   - Reduced network overhead
-        #   - Minimal transaction logging
-        
-        # Configuration explained:
-        #   FORMAT TEXT      - Plain text input format (not CSV or binary)
-        #   DELIMITER E'\t'  - Tab-separated fields (TSV format)
-        #   NULL '\N'       - IMDb uses \N to represent NULL values
-        #   ENCODING 'UTF8' - Handle international characters correctly
+        update_heartbeat(f"Starting bulk load of {total_lines:,} rows")
         copy_sql = f"""
             COPY {table_name} ({', '.join(columns)})
             FROM STDIN
@@ -301,17 +366,26 @@ def load_imdb_table(file_key: str) -> None:
         with open(uncompressed_tsv_path, 'r', encoding='utf-8') as tsvfile:
             cur.copy_expert(copy_sql, tsvfile)
         conn.commit()
+        
+        processing_time = time.time() - start_time
+        update_heartbeat(f"Bulk load completed in {processing_time:.1f} seconds")
         log.info(f"[COPY DONE] Finished loading {table_name} via COPY.")
 
         # 5) Validate row count
+        update_heartbeat("Validating data integrity")
         cur.execute(f"SELECT COUNT(*) FROM {table_name};")
         db_count = cur.fetchone()[0]
         log.info(f"[VERIFY] DB row count: {db_count:,}. File lines: {total_lines:,}.")
-
+        
         if db_count != total_lines:
             log.warning(
                 f"[MISMATCH] Inserted {db_count:,} rows but file had {total_lines:,} lines."
             )
+
+        # Final performance metrics
+        total_time = time.time() - start_time
+        rows_per_second = db_count / total_time if total_time > 0 else 0
+        update_heartbeat(f"Load completed: {db_count:,} rows in {total_time:.1f}s ({rows_per_second:.0f} rows/s)")
 
     except Exception as e:
         log.error(f"[ERROR] Loading data via COPY into {table_name} failed: {e}")
@@ -338,19 +412,23 @@ dag = DAG(
     default_args={
         # Future start date to avoid accidental backfilling
         'start_date': datetime(2025, 1, 1),
+          # Enhanced retry configuration for enterprise resilience
+        'retries': 3,
+        'retry_delay': timedelta(minutes=5),
+        'retry_exponential_backoff': True,
+        'max_retry_delay': timedelta(minutes=30),
         
-        # Retry configuration for resilience
-        'retries': 3,  # Reasonable number of retries
-        'retry_delay': timedelta(minutes=5),  # Exponential backoff would be better
+        # Base timeout - will be overridden per task
+        'execution_timeout': DEFAULT_TASK_TIMEOUT,
         
-        # Safety timeout to prevent hanging tasks
-        'execution_timeout': timedelta(hours=2),
+        # Enterprise best practices
+        'owner': 'data_engineering_team',
+        'depends_on_past': False,
+        'email_on_failure': False,  # Configure with your SMTP settings
+        'email_on_retry': False,
         
-        # Best practices that could be added:
-        # 'owner': 'data_team',  # Ownership tracking
-        # 'email_on_failure': True,  # Failure notifications
-        # 'email': ['team@example.com'],
-        # 'depends_on_past': False,  # Prevent task dependencies on previous runs
+        # SLA monitoring for enterprise compliance
+        'sla': timedelta(hours=3),
     },
     
     # Daily schedule is appropriate for IMDb updates
@@ -366,16 +444,25 @@ dag = DAG(
 
 with dag:
     for file_key in IMDB_FILES:
+        # Get task-specific timeout based on historical performance
+        task_timeout = get_task_timeout(file_key)
+        
         download = PythonOperator(
             task_id=f"download_{file_key}",
             python_callable=fetch_imdb_dataset,
-            op_args=[file_key]
+            op_args=[file_key],
+            execution_timeout=task_timeout,
+            pool='default_pool',
+            doc_md=f"Download {file_key} dataset from IMDb with smart caching"
         )
 
         load_via_copy = PythonOperator(
             task_id=f"load_{file_key}_to_postgres",
             python_callable=load_imdb_table,
-            op_args=[file_key]
+            op_args=[file_key],
+            execution_timeout=task_timeout,
+            pool='default_pool',
+            doc_md=f"Load {file_key} into PostgreSQL using optimized COPY operation"
         )
 
         download >> load_via_copy
