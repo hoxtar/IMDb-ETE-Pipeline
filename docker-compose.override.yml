@@ -5,20 +5,33 @@ services:
       - ./imdb_schemas:/usr/local/airflow/schemas
     env_file:
       - .env
+    environment:
+      - AIRFLOW_CONN_DB_CONN=postgresql://postgres:postgres@postgres:5432/airflow
+      - POSTGRES_CONN_ID=db_conn
   scheduler:
     volumes:
       - ./imdb_data:/usr/local/airflow/data/files
       - ./imdb_schemas:/usr/local/airflow/schemas
     env_file:
-      - .env    
+      - .env
+    environment:
+      - AIRFLOW_CONN_DB_CONN=postgresql://postgres:postgres@postgres:5432/airflow
+      - POSTGRES_CONN_ID=db_conn
   triggerer:
     volumes:
       - ./imdb_data:/usr/local/airflow/data/files
       - ./imdb_schemas:/usr/local/airflow/schemas
     env_file:
       - .env
+    environment:
+      - AIRFLOW_CONN_DB_CONN=postgresql://postgres:postgres@postgres:5432/airflow
+      - POSTGRES_CONN_ID=db_conn
       
   postgres:
     image: postgres:13
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=airflow
     
     

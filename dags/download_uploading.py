@@ -19,23 +19,29 @@ Pipeline Flow:
 
 Author: Andrea Usai
 """
-
+# 1. Standard library imports (alphabetical)
 import os
 import gzip
-import shutil
+import random
 import requests
+import shutil
 import time
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
+# 2. Third-party imports
 import psycopg2
-from airflow import DAG
-from airflow.operators.python import PythonOperator
-from airflow.utils.log.logging_mixin import LoggingMixin
-from airflow.providers.postgres.hooks.postgres import PostgresHook
 
-# Cosmos imports for dbt integration
+# 3. Airflow imports (grouped by module)
+from airflow import DAG
+from airflow.exceptions import AirflowNotFoundException
+from airflow.models import Connection
+from airflow.operators.python import PythonOperator, get_current_context
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow.utils.log.logging_mixin import LoggingMixin
+
+# 4. Framework-specific imports (Cosmos)
 from cosmos import DbtDag, DbtTaskGroup, ProjectConfig, ProfileConfig, ExecutionConfig, RenderConfig
 from cosmos.profiles import PostgresUserPasswordProfileMapping
 
@@ -155,8 +161,11 @@ def fetch_imdb_dataset(file_key: str) -> None:
     file_url = BASE_URL + filename
     filepath = os.path.join(DOWNLOAD_DIR, filename)
 
+    # Retry configuration
     max_retries = 3
     retry_count = 0
+    base_delay = 2  # Base delay in seconds
+    max_delay = 60  # Maximum delay cap in seconds
 
     while retry_count < max_retries:
         try:
@@ -196,8 +205,13 @@ def fetch_imdb_dataset(file_key: str) -> None:
             if retry_count == max_retries:
                 log.error(f"[ERROR] Final attempt to download {filename} after {max_retries} retries")
                 raise
-            log.warning(f"[RETRY] Attempt {retry_count} of {max_retries}")
-            time.sleep(2 ** retry_count)
+            # Calculate delay with exponential backoff + jitter
+            exponential_delay = base_delay * (2 ** (retry_count - 1))
+            jitter = random.uniform(0, exponential_delay * 0.1)  # 10% jitter
+            actual_delay = min(exponential_delay + jitter, max_delay)
+            
+            log.warning(f"[RETRY] Attempt {retry_count} of {max_retries}, waiting {actual_delay:.1f}s")
+            time.sleep(actual_delay)
     
         except requests.exceptions.HTTPError as he:
             status_code = he.response.status_code if he.response else 'Unknown'
@@ -206,9 +220,6 @@ def fetch_imdb_dataset(file_key: str) -> None:
 
 def load_imdb_table(file_key: str) -> None:
     """Loads an IMDb dataset into PostgreSQL efficiently with enhanced monitoring."""
-    import time
-    from airflow.operators.python import get_current_context
-    
     try:
         context = get_current_context()
         task_instance = context.get('task_instance')
@@ -228,16 +239,11 @@ def load_imdb_table(file_key: str) -> None:
     
     start_time = time.time()
     update_heartbeat(f"Starting load process for {table_name}")
-
-    from airflow.models import Connection
-    from airflow.providers.postgres.hooks.base import BaseHook
-
     try:
         hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
         conn = hook.get_conn()
-    except airflow.exceptions.AirflowNotFoundException:
+    except AirflowNotFoundException:
         raise RuntimeError(f"Connection {POSTGRES_CONN_ID} not found. Please check your Airflow connections.")
-    conn = hook.get_conn()
 
     cur = conn.cursor()
 
@@ -333,6 +339,73 @@ profile_config = ProfileConfig(
     ),
 )
 
+# Task-specific retry configurations
+RETRY_CONFIGS = {
+    'title_principals': {
+        'retries': 5,
+        'retry_delay': timedelta(minutes=10),
+        'max_retry_delay': timedelta(hours=1),
+    },
+    'title_basics': {
+        'retries': 4,
+        'retry_delay': timedelta(minutes=7),
+        'max_retry_delay': timedelta(minutes=45),
+    },
+    # Default for other tasks
+    'default': {
+        'retries': 3,
+        'retry_delay': timedelta(minutes=5),
+        'max_retry_delay': timedelta(minutes=30),
+    }
+}
+
+def get_retry_config(file_key: str) -> dict:
+    """Get retry configuration for specific task"""
+    return RETRY_CONFIGS.get(file_key, RETRY_CONFIGS['default'])
+
+# Custom retry decorator with different timing strategies
+def retry_with_custom_timing(strategy='exponential', max_retries=3, base_delay=1):
+    """
+    Custom retry decorator with different timing strategies
+    
+    Strategies:
+    - 'fixed': Always same delay
+    - 'linear': Linearly increasing delay  
+    - 'exponential': Exponentially increasing delay
+    - 'fibonacci': Fibonacci sequence delays
+    """
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            for attempt in range(max_retries + 1):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    if attempt == max_retries:
+                        raise
+                    
+                    if strategy == 'fixed':
+                        delay = base_delay
+                    elif strategy == 'linear':
+                        delay = base_delay * (attempt + 1)
+                    elif strategy == 'exponential':
+                        delay = base_delay * (2 ** attempt)
+                    elif strategy == 'fibonacci':
+                        fib = [1, 1] + [0] * attempt
+                        for i in range(2, len(fib)):
+                            fib[i] = fib[i-1] + fib[i-2]
+                        delay = base_delay * fib[attempt]
+                    
+                    log.info(f"Retry {attempt + 1}/{max_retries} in {delay}s using {strategy} strategy")
+                    time.sleep(delay)
+            
+        return wrapper
+    return decorator
+
+# Example usage:
+# @retry_with_custom_timing(strategy='fibonacci', max_retries=4, base_delay=2)
+# def your_function():
+#     pass
+
 # Create the main DAG
 dag = DAG(
     dag_id="imdb_cosmos_pipeline",
@@ -362,12 +435,16 @@ with dag:
     
     for file_key in IMDB_FILES:
         task_timeout = get_task_timeout(file_key)
+        retry_config = get_retry_config(file_key)
         
         download_task = PythonOperator(
             task_id=f"download_{file_key}",
             python_callable=fetch_imdb_dataset,
             op_args=[file_key],
             execution_timeout=task_timeout,
+            retries=retry_config['retries'],
+            retry_delay=retry_config['retry_delay'],
+            max_retry_delay=retry_config['max_retry_delay'],
             pool='default_pool',
             doc_md=f"Download {file_key} dataset from IMDb with smart caching"
         )
@@ -377,6 +454,9 @@ with dag:
             python_callable=load_imdb_table,
             op_args=[file_key],
             execution_timeout=task_timeout,
+            retries=retry_config['retries'],
+            retry_delay=retry_config['retry_delay'],
+            max_retry_delay=retry_config['max_retry_delay'],
             pool='default_pool',
             doc_md=f"Load {file_key} into PostgreSQL using optimized COPY operation"
         )
