@@ -1,0 +1,24 @@
+services:
+  webserver:
+    volumes:
+      - ./imdb_data:/usr/local/airflow/data/files
+      - ./imdb_schemas:/usr/local/airflow/schemas
+    env_file:
+      - .env
+  scheduler:
+    volumes:
+      - ./imdb_data:/usr/local/airflow/data/files
+      - ./imdb_schemas:/usr/local/airflow/schemas
+    env_file:
+      - .env    
+  triggerer:
+    volumes:
+      - ./imdb_data:/usr/local/airflow/data/files
+      - ./imdb_schemas:/usr/local/airflow/schemas
+    env_file:
+      - .env
+      
+  postgres:
+    image: postgres:13
+    
+    
