@@ -69,7 +69,9 @@ POSTGRES_CONN_ID = os.environ.get('POSTGRES_CONN_ID', 'db_conn')
 
 # dbt project configuration
 DBT_PROJECT_PATH = Path(__file__).parent / "dbt"
-DBT_PROFILES_PATH = Path(__file__).parent / "dbt" / "profiles"
+DBT_PROFILES_PATH = DBT_PROJECT_PATH  # profiles.yml is directly under dags/dbt
+# Ensure dbt uses the correct profiles directory
+os.environ['DBT_PROFILES_DIR'] = str(DBT_PROFILES_PATH)
 
 # Task-specific timeout configurations
 TASK_TIMEOUTS = {
@@ -141,7 +143,7 @@ TABLE_CONFIGS = {
 }
 
 # ----------------------------------------------------------------------------
-# 2. Helper Functions (Keep existing functions)
+# 2. Helper Functions
 # ----------------------------------------------------------------------------
 
 def setup_table_schema(cur: psycopg2.extensions.cursor, schema_file_path: str, table_name: str):
@@ -158,12 +160,56 @@ def setup_table_schema(cur: psycopg2.extensions.cursor, schema_file_path: str, t
     else:
         cur.execute(create_sql)
 
+from airflow.models import Variable
+import json
+
+# Function to get cached download information from Airflow Variables
+def get_download_cache(file_key: str) -> dict:
+    try:
+        cache = Variable.get(f"imdb_{file_key}_cache", default_var={})
+        log.info(f"[CACHE] Fetched download cache for {file_key}: {cache}")
+        return json.loads(cache)
+    except Exception as e:
+        log.error(f"[ERROR] Error fetching download cache for {file_key}: {e}")
+        return {}
+    
+# Function to update cached download information in Airflow Variables
+def update_download_cache(file_key: str, remote_last_modified: str, local_path: str):
+    # Get existing cache to preserve last_loaded
+    existing_cache = get_download_cache(file_key)
+    
+    cache = {
+        "remote_last_modified": remote_last_modified,
+        "local_path": local_path,
+        "file_size": os.path.getsize(local_path) if os.path.exists(local_path) else 0,
+        "last_loaded": existing_cache.get("last_loaded", "")
+    }
+    Variable.set(f"imdb_{file_key}_cache", json.dumps(cache))
+    log.info(f"[CACHE UPDATE] Updated file info for {file_key}")
+
+def update_cache_loaded_time(file_key: str):
+    """Update only the last_loaded time (for database loads)"""
+    existing_cache = get_download_cache(file_key)
+    
+    if existing_cache:
+        existing_cache["last_loaded"] = datetime.now(timezone.utc).isoformat()
+        Variable.set(f"imdb_{file_key}_cache", json.dumps(existing_cache))
+        log.info(f"[CACHE UPDATE] Updated last_loaded time for {file_key}")
+    else:
+        log.warning(f"[CACHE WARNING] No existing cache found for {file_key}")
+
 def fetch_imdb_dataset(file_key: str) -> None:
     """Downloads and caches an IMDb dataset file if newer version exists."""
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
     filename = IMDB_FILES[file_key]
     file_url = BASE_URL + filename
     filepath = os.path.join(DOWNLOAD_DIR, filename)
+
+    # Get cached information
+    cache_info = get_download_cache(file_key)
+    cache_last_modified = cache_info.get("remote_last_modified")
+
+    log.info(f"[CACHE] Checking for {filename}")
 
     # Retry configuration
     max_retries = 3
@@ -173,42 +219,60 @@ def fetch_imdb_dataset(file_key: str) -> None:
 
     while retry_count < max_retries:
         try:
-            log.info(f"[CHECK] Checking Last-Modified for {filename}...")
-            head_resp = requests.head(file_url, timeout=30)
-            head_resp.raise_for_status()
-            remote_last_modified_str = head_resp.headers.get('Last-Modified')
-
-            if os.path.exists(filepath):
-                local_timestamp = os.path.getmtime(filepath)
-                local_dt = datetime.fromtimestamp(local_timestamp, timezone.utc)
-                log.info(f"[LOCAL] {filepath} last modified: {local_dt.isoformat()}")
-
-                if remote_last_modified_str:
-                    remote_dt = parsedate_to_datetime(remote_last_modified_str)
-                    
-                    if local_dt >= remote_dt:
-                        log.info(f"[SKIP] Local is up-to-date.")
+            # Check if we need to validate with remote
+            if cache_last_modified and os.path.exists(filepath):
+                log.info(f"[CACHE HIT] Found cached info: {cache_last_modified}")
+                # Only check remote if cache is older than 1 hour
+                last_checked = cache_info.get("last_checked")
+                if last_checked:
+                    last_checked_dt = datetime.fromisoformat(last_checked.replace('Z', '+00:00'))
+                    if datetime.now(timezone.utc) - last_checked_dt < timedelta(hours=1):
+                        log.info(f"[CACHE VALID] Recent cache check, skipping remote validation")
                         return
-                    else:
-                        log.info(f"[RE-DOWNLOAD] Local is older.")
-                else:
-                    log.warning("[WARN] No 'Last-Modified' in response headers. Re-downloading anyway.")
+        
+            log.info(f"[CACHE VALID] Cache check not recent for {filename}, proceeding with remote validation")
+                
+            # Remote cache validation
+            try:
+                log.info(f"[REMOTE CHECK] Validating for {filename}...")
+                head_resp = requests.head(file_url, timeout=30)
+                head_resp.raise_for_status()
+                remote_last_modified = head_resp.headers.get('Last-Modified')
 
-            log.info(f"[DOWNLOAD] Fetching {filename} from {file_url}...")
-            dl_resp = requests.get(file_url, timeout=120)
-            dl_resp.raise_for_status()
+                if remote_last_modified:
+                    # Compare with cache
+                    if cache_last_modified == remote_last_modified and os.path.exists(filepath):
+                        log.info(f"[CACHE VALID] Remote matches cache, loading phase...")
+                        return
+                    elif cache_last_modified != remote_last_modified:
+                        log.info(f"[CACHE MISS] Remote newer than cache")
 
-            with open(filepath, 'wb') as f:
-                f.write(dl_resp.content)
-            size_kb = os.path.getsize(filepath) / 1024
-            log.info(f"[DONE] Saved {filename} -> {filepath} ({size_kb:.2f} KB)")
-            return
-            
+                # Download file
+                log.info(f"[DOWNLOAD] Fetching {filename} from {file_url}...")
+                dl_resp = requests.get(file_url, timeout=120)
+                dl_resp.raise_for_status()
+
+                with open(filepath, 'wb') as f:
+                    f.write(dl_resp.content)
+
+                # Update cache
+                if remote_last_modified:
+                    update_download_cache(file_key, remote_last_modified, filepath)
+                
+                # Log download completion
+                size_kb = os.path.getsize(filepath) / 1024
+                log.info(f"[DOWNLOAD COMPLETE] Saved {filename} -> {filepath} ({size_kb:.2f} KB)")
+                return
+            except Exception as e:
+                log.error(f"[ERROR] Error downloading {filename}: {e}")
+                raise
+
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             retry_count += 1
             if retry_count == max_retries:
                 log.error(f"[ERROR] Final attempt to download {filename} after {max_retries} retries")
                 raise
+            
             # Calculate delay with exponential backoff + jitter
             exponential_delay = base_delay * (2 ** (retry_count - 1))
             jitter = random.uniform(0, exponential_delay * 0.1)  # 10% jitter
@@ -220,6 +284,10 @@ def fetch_imdb_dataset(file_key: str) -> None:
         except requests.exceptions.HTTPError as he:
             status_code = he.response.status_code if he.response else 'Unknown'
             log.error(f"[ERROR] HTTP {status_code} error for {filename}: {he}")
+            raise
+        
+        except Exception as check_error:
+            log.error(f"[ERROR] Check control failed for {filename}: {check_error}")
             raise
 
 def load_imdb_table(file_key: str) -> None:
@@ -240,6 +308,38 @@ def load_imdb_table(file_key: str) -> None:
     table_name = f"imdb_{file_key}"
     config = TABLE_CONFIGS[file_key]
     columns = config['columns']
+
+    # Cache check to determine if loading is needed
+    cache_info = get_download_cache(file_key)
+    remote_last_modified = cache_info.get("remote_last_modified")
+    last_loaded = cache_info.get("last_loaded")
+
+    log.info(f"[CACHE CHECK] Checking load necessity for {table_name}")
+    log.info(f"[CACHE INFO] Remote last modified: {remote_last_modified}")
+    log.info(f"[CACHE INFO] Last loaded: {last_loaded}")
+
+    # Skip loading if we've already loaded the current version
+    if remote_last_modified and last_loaded:
+        try:
+            remote_dt = parsedate_to_datetime(remote_last_modified)
+            loaded_dt = datetime.fromisoformat(last_loaded.replace('Z', '+00:00'))
+
+            # if loaded date is after the remote update date it means we have already uploaded the most recent version so we can skip the loading
+            if loaded_dt >= remote_dt:
+                log.info(f"[CACHE HIT] {table_name} already loaded current version")
+                log.info(f"[CACHE HIT] File modified: {remote_last_modified}, Last loaded: {last_loaded}")
+                update_heartbeat(f"Skipping load - {table_name} already up to date")
+                return
+            else:
+                log.info(f"[CACHE MISS] Remote file newer than last load")
+                log.info(f"[CACHE MISS] File modified: {remote_dt}, Last loaded: {loaded_dt}")
+                
+        except Exception as parse_error:
+            log.warning(f"[CACHE WARNING] Error parsing timestamps: {parse_error}, proceeding with load")
+    elif not remote_last_modified:
+        log.warning(f"[CACHE WARNING] No remote_last_modified found, proceeding with load")
+    elif not last_loaded:
+        log.info(f"[CACHE MISS] No previous load recorded, proceeding with load")
     
     start_time = time.time()
     update_heartbeat(f"Starting load process for {table_name}")
@@ -334,14 +434,14 @@ def load_imdb_table(file_key: str) -> None:
 # ----------------------------------------------------------------------------
 
 # dbt configuration for Cosmos
-# profile_config = ProfileConfig(
-#     profile_name="my_imdb_project",
-#     target_name="dev",
-#     profile_mapping=PostgresUserPasswordProfileMapping(
-#         conn_id=POSTGRES_CONN_ID,
-#         profile_args={"schema": "public"},
-#     ),
-# )
+profile_config = ProfileConfig(
+    profile_name="my_imdb_project",
+    target_name="dev",
+    profile_mapping=PostgresUserPasswordProfileMapping(
+        conn_id=POSTGRES_CONN_ID,
+        profile_args={"schema": "public"},
+    ),
+)
 
 # Task-specific retry configurations
 RETRY_CONFIGS = {
@@ -442,44 +542,26 @@ def create_dbt_task_group(load_tasks):
         ),
     )
 
-    # ProjectConfig defines the dbt project to be used.
-    # The manifest_path is crucial when using LoadMode.DBT_MANIFEST.
-    # It tells Cosmos where to find the pre-compiled dbt manifest file (manifest.json),
-    # which is generated by running `dbt parse` or `dbt compile` in the dbt project.
-    # Using the manifest significantly speeds up DAG parsing.
     project_config = ProjectConfig(
         dbt_project_path=DBT_PROJECT_PATH,
-        manifest_path=DBT_PROJECT_PATH / "target" / "manifest.json", # Added for LoadMode.DBT_MANIFEST
+        manifest_path=DBT_PROJECT_PATH / "target" / "manifest.json",
         models_relative_path="models",
         seeds_relative_path="seeds",
         snapshots_relative_path="snapshots",
     )
 
-    # To address potential DagBag import timeouts, especially with complex dbt projects,
-    # we switched the load_method to LoadMode.DBT_MANIFEST.
-    # This method relies on a pre-compiled dbt manifest.json file, which significantly
-    # speeds up DAG parsing by avoiding the need for Cosmos to parse the entire dbt project structure
-    # at runtime. This requires that `dbt parse` or `dbt compile` is run before Airflow
-    # tries to parse this DAG, ensuring the manifest.json is up-to-date.
     render_config = RenderConfig(
         load_method=LoadMode.DBT_MANIFEST,
-        select=["path:models/staging/imdb", "path:models/intermediate/imdb", "path:models/marts/imdb"],
     )
-
     tg = DbtTaskGroup(
         group_id="dbt_transformations",
         project_config=project_config,
         profile_config=profile_config,
-        execution_config=ExecutionConfig(dbt_executable_path="dbt"),
+        execution_config=ExecutionConfig(dbt_executable_path="/usr/local/bin/dbt"),
         render_config=render_config,
         
-        # The 'full_refresh' argument is not a universally valid parameter for all operators
-        # that Cosmos might generate from dbt models (e.g., DbtTestLocalOperator).
-        # Its presence was causing an AirflowException: "Invalid arguments were passed...".
-        # Removing it allows Cosmos to correctly pass only valid arguments to its underlying operators.
         operator_args={
             "install_deps": True,
-            # "full_refresh": False, # Removed to prevent errors with operators like DbtTestLocalOperator
         },
         default_args={"retries": 2, "retry_delay": timedelta(minutes=3)},
     )
