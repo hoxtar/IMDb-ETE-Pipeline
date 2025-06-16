@@ -5,7 +5,7 @@ my_imdb_project:
       host: postgres
       user: airflow
       pass: airflow
-      port: 5432
+      port: 5433
       dbname: airflow
       schema: public
       threads: 4

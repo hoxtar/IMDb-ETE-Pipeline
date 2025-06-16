@@ -90,3 +90,358 @@ Compilation Error
 [0m20:15:54.921599 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000016721D96A50>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001671A52E150>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001671A5E4710>]}
 [0m20:15:54.921599 [debug] [MainThread]: Flushing usage events
 [0m20:15:56.126062 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m10:48:45.588088 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000023EBED51C10>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000023EBED506D0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000023EBED53610>]}
+
+
+============================== 10:48:45.602687 | 901191d8-b350-44d8-8dc0-d45f8a0d8952 ==============================
+[0m10:48:45.602687 [info ] [MainThread]: Running with dbt=1.9.3
+[0m10:48:45.605049 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'log_cache_events': 'False', 'write_json': 'True', 'partial_parse': 'True', 'cache_selected_only': 'False', 'profiles_dir': 'C:\\Users\\andry\\OneDrive\\Desktop\\Projects\\IMDb\\apache-airflow-dev-server\\dags\\dbt', 'fail_fast': 'False', 'debug': 'False', 'log_path': 'C:\\Users\\andry\\OneDrive\\Desktop\\Projects\\IMDb\\apache-airflow-dev-server\\dags\\dbt\\logs', 'version_check': 'True', 'warn_error': 'None', 'use_colors': 'True', 'use_experimental_parser': 'False', 'empty': 'None', 'quiet': 'False', 'no_print': 'None', 'log_format': 'default', 'static_parser': 'True', 'invocation_command': 'dbt parse', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'target_path': 'None', 'introspect': 'True', 'send_anonymous_usage_stats': 'True'}
+[0m10:48:48.640606 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': '901191d8-b350-44d8-8dc0-d45f8a0d8952', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000023EBABB9990>]}
+[0m10:48:48.812573 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': '901191d8-b350-44d8-8dc0-d45f8a0d8952', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000023EBA944450>]}
+[0m10:48:48.816102 [info ] [MainThread]: Registered adapter: postgres=1.9.0
+[0m10:48:49.792378 [debug] [MainThread]: checksum: 5671c00892cdbcef29c3b00cc5ba7510c3d18a35c883caeb9ab9ee266dc29c8f, vars: {}, profile: , target: , version: 1.9.3
+[0m10:48:50.370756 [debug] [MainThread]: Partial parsing enabled: 0 files deleted, 0 files added, 0 files changed.
+[0m10:48:50.372216 [debug] [MainThread]: Partial parsing enabled, no changes found, skipping parsing
+[0m10:48:50.525378 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'load_project', 'label': '901191d8-b350-44d8-8dc0-d45f8a0d8952', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000023EBDB9DF50>]}
+[0m10:48:50.536010 [info ] [MainThread]: Performance info: C:\Users\andry\OneDrive\Desktop\Projects\IMDb\apache-airflow-dev-server\dags\dbt\target\perf_info.json
+[0m10:48:50.851099 [debug] [MainThread]: Wrote artifact WritableManifest to C:\Users\andry\OneDrive\Desktop\Projects\IMDb\apache-airflow-dev-server\dags\dbt\target\manifest.json
+[0m10:48:50.875659 [debug] [MainThread]: Wrote artifact SemanticManifest to C:\Users\andry\OneDrive\Desktop\Projects\IMDb\apache-airflow-dev-server\dags\dbt\target\semantic_manifest.json
+[0m10:48:50.879516 [debug] [MainThread]: Command `dbt parse` succeeded at 10:48:50.877414 after 5.51 seconds
+[0m10:48:50.879516 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000023EBDA54250>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000023EB75A4750>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000023EB752AAD0>]}
+[0m10:48:50.882650 [debug] [MainThread]: Flushing usage events
+[0m10:48:52.357971 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m10:57:03.958503 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001B60FA83750>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001B60FA83B50>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001B60FA807D0>]}
+
+
+============================== 10:57:03.974904 | 6b2b762a-cef4-401c-9216-e96a74baa6b2 ==============================
+[0m10:57:03.974904 [info ] [MainThread]: Running with dbt=1.9.3
+[0m10:57:03.976911 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'write_json': 'True', 'log_cache_events': 'False', 'partial_parse': 'True', 'cache_selected_only': 'False', 'warn_error': 'None', 'version_check': 'True', 'fail_fast': 'False', 'log_path': 'C:\\Users\\andry\\OneDrive\\Desktop\\Projects\\IMDb\\apache-airflow-dev-server\\dags\\dbt\\logs', 'debug': 'False', 'profiles_dir': 'C:\\Users\\andry\\OneDrive\\Desktop\\Projects\\IMDb\\apache-airflow-dev-server\\dags\\dbt', 'use_colors': 'True', 'use_experimental_parser': 'False', 'empty': 'None', 'quiet': 'False', 'no_print': 'None', 'log_format': 'default', 'invocation_command': 'dbt deps', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'introspect': 'True', 'target_path': 'None', 'static_parser': 'True', 'send_anonymous_usage_stats': 'True'}
+[0m10:57:05.192403 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': '6b2b762a-cef4-401c-9216-e96a74baa6b2', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001B60FB2C050>]}
+[0m10:57:05.365103 [debug] [MainThread]: Set downloads directory='C:\Users\andry\AppData\Local\Temp\dbt-downloads-_si1l7ja'
+[0m10:57:05.367120 [debug] [MainThread]: Making package index registry request: GET https://hub.getdbt.com/api/v1/index.json
+[0m10:57:07.774830 [debug] [MainThread]: Response from registry index: GET https://hub.getdbt.com/api/v1/index.json 200
+[0m10:57:07.778830 [debug] [MainThread]: Making package registry request: GET https://hub.getdbt.com/api/v1/dbt-labs/dbt_utils.json
+[0m10:57:09.141292 [debug] [MainThread]: Response from registry: GET https://hub.getdbt.com/api/v1/dbt-labs/dbt_utils.json 200
+[0m10:57:09.154421 [info ] [MainThread]: Installing dbt-labs/dbt_utils
+[0m10:57:12.125532 [info ] [MainThread]: Installed from version 1.3.0
+[0m10:57:12.145096 [info ] [MainThread]: Up to date!
+[0m10:57:12.199777 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'package', 'label': '6b2b762a-cef4-401c-9216-e96a74baa6b2', 'property_': 'install', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001B60FB23810>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001B60FC50310>]}
+[0m10:57:12.208356 [debug] [MainThread]: Command `dbt deps` succeeded at 10:57:12.208356 after 8.85 seconds
+[0m10:57:12.210369 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001B608304710>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001B60824E150>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001B60828AAD0>]}
+[0m10:57:12.212387 [debug] [MainThread]: Flushing usage events
+[0m10:57:14.754651 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m10:58:39.037912 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E747C42E90>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E747C42D10>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E747C42BD0>]}
+
+
+============================== 10:58:39.050128 | 7138d3fd-c16e-4f61-8bdb-a5604846ca89 ==============================
+[0m10:58:39.050128 [info ] [MainThread]: Running with dbt=1.9.3
+[0m10:58:39.057372 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'log_cache_events': 'False', 'write_json': 'True', 'partial_parse': 'True', 'cache_selected_only': 'False', 'warn_error': 'None', 'version_check': 'True', 'profiles_dir': 'C:\\Users\\andry\\OneDrive\\Desktop\\Projects\\IMDb\\apache-airflow-dev-server\\dags\\dbt', 'log_path': 'C:\\Users\\andry\\OneDrive\\Desktop\\Projects\\IMDb\\apache-airflow-dev-server\\dags\\dbt\\logs', 'fail_fast': 'False', 'debug': 'False', 'use_colors': 'True', 'use_experimental_parser': 'False', 'no_print': 'None', 'quiet': 'False', 'empty': 'None', 'log_format': 'default', 'invocation_command': 'dbt parse', 'introspect': 'True', 'static_parser': 'True', 'target_path': 'None', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'send_anonymous_usage_stats': 'True'}
+[0m10:58:39.998817 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': '7138d3fd-c16e-4f61-8bdb-a5604846ca89', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E747CA1C10>]}
+[0m10:58:40.260720 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': '7138d3fd-c16e-4f61-8bdb-a5604846ca89', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E743834DD0>]}
+[0m10:58:40.263765 [info ] [MainThread]: Registered adapter: postgres=1.9.0
+[0m10:58:42.047301 [debug] [MainThread]: checksum: 5671c00892cdbcef29c3b00cc5ba7510c3d18a35c883caeb9ab9ee266dc29c8f, vars: {}, profile: , target: , version: 1.9.3
+[0m10:58:47.935192 [debug] [MainThread]: Partial parsing enabled: 0 files deleted, 0 files added, 0 files changed.
+[0m10:58:47.940366 [debug] [MainThread]: Partial parsing enabled, no changes found, skipping parsing
+[0m10:58:48.124920 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'load_project', 'label': '7138d3fd-c16e-4f61-8bdb-a5604846ca89', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E747DFF190>]}
+[0m10:58:48.140121 [info ] [MainThread]: Performance info: C:\Users\andry\OneDrive\Desktop\Projects\IMDb\apache-airflow-dev-server\dags\dbt\target\perf_info.json
+[0m10:58:48.679125 [debug] [MainThread]: Wrote artifact WritableManifest to C:\Users\andry\OneDrive\Desktop\Projects\IMDb\apache-airflow-dev-server\dags\dbt\target\manifest.json
+[0m10:58:48.784916 [debug] [MainThread]: Wrote artifact SemanticManifest to C:\Users\andry\OneDrive\Desktop\Projects\IMDb\apache-airflow-dev-server\dags\dbt\target\semantic_manifest.json
+[0m10:58:48.790854 [debug] [MainThread]: Command `dbt parse` succeeded at 10:58:48.790854 after 10.28 seconds
+[0m10:58:48.792862 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E7469B0890>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E740424710>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E7403AAAD0>]}
+[0m10:58:48.792862 [debug] [MainThread]: Flushing usage events
+[0m10:58:51.032560 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m13:22:43.215624 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000027D08A3CD50>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000027D08A3E150>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000027D08A3CCD0>]}
+
+
+============================== 13:22:43.227846 | deaff28d-62dc-4358-aa1c-f4b6f9891f05 ==============================
+[0m13:22:43.227846 [info ] [MainThread]: Running with dbt=1.9.3
+[0m13:22:43.230792 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'write_json': 'True', 'log_cache_events': 'False', 'partial_parse': 'True', 'cache_selected_only': 'False', 'warn_error': 'None', 'fail_fast': 'False', 'profiles_dir': 'C:\\Users\\andry\\OneDrive\\Desktop\\Projects\\IMDb\\apache-airflow-dev-server\\dags\\dbt', 'log_path': 'C:\\Users\\andry\\OneDrive\\Desktop\\Projects\\IMDb\\apache-airflow-dev-server\\dags\\dbt\\logs', 'version_check': 'True', 'debug': 'False', 'use_colors': 'True', 'use_experimental_parser': 'False', 'no_print': 'None', 'quiet': 'False', 'empty': 'None', 'log_format': 'default', 'invocation_command': 'dbt deps', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'introspect': 'True', 'target_path': 'None', 'static_parser': 'True', 'send_anonymous_usage_stats': 'True'}
+[0m13:22:44.058398 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': 'deaff28d-62dc-4358-aa1c-f4b6f9891f05', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000027D08A3C210>]}
+[0m13:22:44.158324 [debug] [MainThread]: Set downloads directory='C:\Users\andry\AppData\Local\Temp\dbt-downloads-24ub11a9'
+[0m13:22:44.160323 [debug] [MainThread]: Making package index registry request: GET https://hub.getdbt.com/api/v1/index.json
+[0m13:22:45.390033 [debug] [MainThread]: Response from registry index: GET https://hub.getdbt.com/api/v1/index.json 200
+[0m13:22:45.394054 [debug] [MainThread]: Making package registry request: GET https://hub.getdbt.com/api/v1/dbt-labs/dbt_utils.json
+[0m13:22:46.521034 [debug] [MainThread]: Response from registry: GET https://hub.getdbt.com/api/v1/dbt-labs/dbt_utils.json 200
+[0m13:22:46.559965 [info ] [MainThread]: Updating lock file in file path: C:\Users\andry\OneDrive\Desktop\Projects\IMDb\apache-airflow-dev-server\dags\dbt/package-lock.yml
+[0m13:22:46.575069 [debug] [MainThread]: Set downloads directory='C:\Users\andry\AppData\Local\Temp\dbt-downloads-6g5tv4ec'
+[0m13:22:46.587757 [info ] [MainThread]: Installing dbt-labs/dbt_utils
+[0m13:22:48.610470 [info ] [MainThread]: Installed from version 1.3.0
+[0m13:22:48.614492 [info ] [MainThread]: Up to date!
+[0m13:22:48.614492 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'package', 'label': 'deaff28d-62dc-4358-aa1c-f4b6f9891f05', 'property_': 'install', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000027D075D0850>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000027D08F2F7D0>]}
+[0m13:22:48.623042 [debug] [MainThread]: Command `dbt deps` succeeded at 13:22:48.621029 after 5.61 seconds
+[0m13:22:48.623042 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000027D011B4710>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000027D010FE150>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000027D0113AAD0>]}
+[0m13:22:48.625055 [debug] [MainThread]: Flushing usage events
+[0m13:22:50.272388 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m13:23:38.894004 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001D171452F90>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001D171447E50>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001D171447710>]}
+
+
+============================== 13:23:38.894004 | 460c2e3a-2bf2-4a6a-a185-2bac5fc5b152 ==============================
+[0m13:23:38.894004 [info ] [MainThread]: Running with dbt=1.9.3
+[0m13:23:38.894004 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'write_json': 'True', 'log_cache_events': 'False', 'partial_parse': 'True', 'cache_selected_only': 'False', 'warn_error': 'None', 'debug': 'False', 'profiles_dir': 'C:\\Users\\andry\\OneDrive\\Desktop\\Projects\\IMDb\\apache-airflow-dev-server\\dags\\dbt', 'log_path': 'C:\\Users\\andry\\OneDrive\\Desktop\\Projects\\IMDb\\apache-airflow-dev-server\\dags\\dbt\\logs', 'fail_fast': 'False', 'version_check': 'True', 'use_colors': 'True', 'use_experimental_parser': 'False', 'no_print': 'None', 'quiet': 'False', 'empty': 'None', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'introspect': 'True', 'invocation_command': 'dbt parse', 'log_format': 'default', 'target_path': 'None', 'static_parser': 'True', 'send_anonymous_usage_stats': 'True'}
+[0m13:23:39.411071 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': '460c2e3a-2bf2-4a6a-a185-2bac5fc5b152', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001D171664690>]}
+[0m13:23:39.530029 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': '460c2e3a-2bf2-4a6a-a185-2bac5fc5b152', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001D16D0451D0>]}
+[0m13:23:39.530029 [info ] [MainThread]: Registered adapter: postgres=1.9.0
+[0m13:23:40.225327 [debug] [MainThread]: checksum: 5671c00892cdbcef29c3b00cc5ba7510c3d18a35c883caeb9ab9ee266dc29c8f, vars: {}, profile: , target: , version: 1.9.3
+[0m13:23:40.227337 [info ] [MainThread]: Unable to do partial parsing because saved manifest not found. Starting full parse.
+[0m13:23:40.227337 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'partial_parser', 'label': '460c2e3a-2bf2-4a6a-a185-2bac5fc5b152', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001D1715A9FD0>]}
+[0m13:23:45.571275 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'load_project', 'label': '460c2e3a-2bf2-4a6a-a185-2bac5fc5b152', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001D171BB5B90>]}
+[0m13:23:45.587834 [info ] [MainThread]: Performance info: C:\Users\andry\OneDrive\Desktop\Projects\IMDb\apache-airflow-dev-server\dags\dbt\target\perf_info.json
+[0m13:23:45.847963 [debug] [MainThread]: Wrote artifact WritableManifest to C:\Users\andry\OneDrive\Desktop\Projects\IMDb\apache-airflow-dev-server\dags\dbt\target\manifest.json
+[0m13:23:45.857305 [debug] [MainThread]: Wrote artifact SemanticManifest to C:\Users\andry\OneDrive\Desktop\Projects\IMDb\apache-airflow-dev-server\dags\dbt\target\semantic_manifest.json
+[0m13:23:45.857305 [debug] [MainThread]: Command `dbt parse` succeeded at 13:23:45.857305 after 7.22 seconds
+[0m13:23:45.857305 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001D1714B2050>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001D16F79DD90>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001D169C74710>]}
+[0m13:23:45.857305 [debug] [MainThread]: Flushing usage events
+[0m13:23:47.252495 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m13:25:07.402494 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E6FE672790>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E6FE672890>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E6FE670550>]}
+
+
+============================== 13:25:07.413059 | b31f345b-e501-4237-934f-9ba099447f0b ==============================
+[0m13:25:07.413059 [info ] [MainThread]: Running with dbt=1.9.3
+[0m13:25:07.415031 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'write_json': 'True', 'log_cache_events': 'False', 'partial_parse': 'True', 'cache_selected_only': 'False', 'warn_error': 'None', 'version_check': 'True', 'fail_fast': 'False', 'log_path': 'C:\\Users\\andry\\OneDrive\\Desktop\\Projects\\IMDb\\apache-airflow-dev-server\\dags\\dbt\\logs', 'profiles_dir': 'C:\\Users\\andry\\OneDrive\\Desktop\\Projects\\IMDb\\apache-airflow-dev-server\\dags\\dbt', 'debug': 'False', 'use_colors': 'True', 'use_experimental_parser': 'False', 'empty': 'None', 'quiet': 'False', 'no_print': 'None', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'introspect': 'True', 'log_format': 'default', 'invocation_command': 'dbt parse', 'target_path': 'None', 'static_parser': 'True', 'send_anonymous_usage_stats': 'True'}
+[0m13:25:08.329961 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': 'b31f345b-e501-4237-934f-9ba099447f0b', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E6FE884F90>]}
+[0m13:25:08.457896 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': 'b31f345b-e501-4237-934f-9ba099447f0b', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E6FA274D50>]}
+[0m13:25:08.460619 [info ] [MainThread]: Registered adapter: postgres=1.9.0
+[0m13:25:10.273132 [debug] [MainThread]: checksum: 5671c00892cdbcef29c3b00cc5ba7510c3d18a35c883caeb9ab9ee266dc29c8f, vars: {}, profile: , target: , version: 1.9.3
+[0m13:25:10.856565 [debug] [MainThread]: Partial parsing enabled: 0 files deleted, 0 files added, 0 files changed.
+[0m13:25:10.858971 [debug] [MainThread]: Partial parsing enabled, no changes found, skipping parsing
+[0m13:25:10.965236 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'load_project', 'label': 'b31f345b-e501-4237-934f-9ba099447f0b', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E6FD3E0690>]}
+[0m13:25:10.982297 [info ] [MainThread]: Performance info: C:\Users\andry\OneDrive\Desktop\Projects\IMDb\apache-airflow-dev-server\dags\dbt\target\perf_info.json
+[0m13:25:11.477562 [debug] [MainThread]: Wrote artifact WritableManifest to C:\Users\andry\OneDrive\Desktop\Projects\IMDb\apache-airflow-dev-server\dags\dbt\target\manifest.json
+[0m13:25:11.532283 [debug] [MainThread]: Wrote artifact SemanticManifest to C:\Users\andry\OneDrive\Desktop\Projects\IMDb\apache-airflow-dev-server\dags\dbt\target\semantic_manifest.json
+[0m13:25:11.534761 [debug] [MainThread]: Command `dbt parse` succeeded at 13:25:11.534761 after 4.34 seconds
+[0m13:25:11.536319 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E6F6D8E150>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E6F6E44710>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E6F6DCAAD0>]}
+[0m13:25:11.538470 [debug] [MainThread]: Flushing usage events
+[0m13:25:12.967971 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m16:41:57.543455 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000029BFFD739D0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000029BFDFB6090>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000029BFFD725D0>]}
+
+
+============================== 16:41:57.553115 | ebda702e-4e7a-477f-b9e5-e18a738a389e ==============================
+[0m16:41:57.553115 [info ] [MainThread]: Running with dbt=1.9.3
+[0m16:41:57.555119 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'log_cache_events': 'False', 'write_json': 'True', 'partial_parse': 'True', 'cache_selected_only': 'False', 'warn_error': 'None', 'debug': 'False', 'fail_fast': 'False', 'log_path': 'C:\\Users\\andry\\OneDrive\\Desktop\\Projects\\IMDb\\apache-airflow-dev-server\\dags\\dbt\\logs', 'version_check': 'True', 'profiles_dir': '.', 'use_colors': 'True', 'use_experimental_parser': 'False', 'empty': 'None', 'quiet': 'False', 'no_print': 'None', 'log_format': 'default', 'introspect': 'True', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'static_parser': 'True', 'target_path': 'None', 'invocation_command': 'dbt parse --profiles-dir .', 'send_anonymous_usage_stats': 'True'}
+[0m16:41:58.069084 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': 'ebda702e-4e7a-477f-b9e5-e18a738a389e', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000029B8001F8D0>]}
+[0m16:41:58.154936 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': 'ebda702e-4e7a-477f-b9e5-e18a738a389e', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000029BFB9648D0>]}
+[0m16:41:58.157674 [info ] [MainThread]: Registered adapter: postgres=1.9.0
+[0m16:41:58.820319 [debug] [MainThread]: checksum: 5671c00892cdbcef29c3b00cc5ba7510c3d18a35c883caeb9ab9ee266dc29c8f, vars: {}, profile: , target: , version: 1.9.3
+[0m16:42:00.757872 [debug] [MainThread]: Partial parsing enabled: 0 files deleted, 0 files added, 0 files changed.
+[0m16:42:00.758873 [debug] [MainThread]: Partial parsing enabled, no changes found, skipping parsing
+[0m16:42:00.827167 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'load_project', 'label': 'ebda702e-4e7a-477f-b9e5-e18a738a389e', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000029B802318D0>]}
+[0m16:42:00.836892 [info ] [MainThread]: Performance info: C:\Users\andry\OneDrive\Desktop\Projects\IMDb\apache-airflow-dev-server\dags\dbt\target\perf_info.json
+[0m16:42:01.037492 [debug] [MainThread]: Wrote artifact WritableManifest to C:\Users\andry\OneDrive\Desktop\Projects\IMDb\apache-airflow-dev-server\dags\dbt\target\manifest.json
+[0m16:42:01.067628 [debug] [MainThread]: Wrote artifact SemanticManifest to C:\Users\andry\OneDrive\Desktop\Projects\IMDb\apache-airflow-dev-server\dags\dbt\target\semantic_manifest.json
+[0m16:42:01.069625 [debug] [MainThread]: Command `dbt parse` succeeded at 16:42:01.069625 after 3.65 seconds
+[0m16:42:01.070626 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000029BF8103E10>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000029BFEBE9650>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000029BFEBB9F10>]}
+[0m16:42:01.070626 [debug] [MainThread]: Flushing usage events
+[0m16:42:02.467002 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m16:42:56.067180 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E7B7EB36D0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E7B6C20B90>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E7B7EB3990>]}
+
+
+============================== 16:42:56.074174 | fd21decf-f25c-4da6-a88f-12b711375fae ==============================
+[0m16:42:56.074174 [info ] [MainThread]: Running with dbt=1.9.3
+[0m16:42:56.075174 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'log_cache_events': 'False', 'write_json': 'True', 'partial_parse': 'True', 'cache_selected_only': 'False', 'profiles_dir': '.', 'version_check': 'True', 'warn_error': 'None', 'log_path': 'C:\\Users\\andry\\OneDrive\\Desktop\\Projects\\IMDb\\apache-airflow-dev-server\\dags\\dbt\\logs', 'debug': 'False', 'fail_fast': 'False', 'use_colors': 'True', 'use_experimental_parser': 'False', 'empty': 'None', 'quiet': 'False', 'no_print': 'None', 'log_format': 'default', 'introspect': 'True', 'invocation_command': 'dbt debug --profiles-dir .', 'static_parser': 'True', 'target_path': 'None', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'send_anonymous_usage_stats': 'True'}
+[0m16:42:56.171632 [info ] [MainThread]: dbt version: 1.9.3
+[0m16:42:56.173642 [info ] [MainThread]: python version: 3.11.7
+[0m16:42:56.174646 [info ] [MainThread]: python path: C:\Program Files\PostgreSQL\16\pgAdmin 4\python\python.exe
+[0m16:42:56.175640 [info ] [MainThread]: os info: Windows-10-10.0.26200-SP0
+[0m16:42:56.322571 [info ] [MainThread]: Using profiles dir at .
+[0m16:42:56.322571 [info ] [MainThread]: Using profiles.yml file at .\profiles.yml
+[0m16:42:56.324080 [info ] [MainThread]: Using dbt_project.yml file at C:\Users\andry\OneDrive\Desktop\Projects\IMDb\apache-airflow-dev-server\dags\dbt\dbt_project.yml
+[0m16:42:56.326088 [info ] [MainThread]: adapter type: postgres
+[0m16:42:56.327089 [info ] [MainThread]: adapter version: 1.9.0
+[0m16:42:56.593302 [info ] [MainThread]: Configuration:
+[0m16:42:56.594299 [info ] [MainThread]:   profiles.yml file [[32mOK found and valid[0m]
+[0m16:42:56.595811 [info ] [MainThread]:   dbt_project.yml file [[32mOK found and valid[0m]
+[0m16:42:56.601662 [info ] [MainThread]: Required dependencies:
+[0m16:42:56.602662 [debug] [MainThread]: Executing "git --help"
+[0m16:42:56.708293 [debug] [MainThread]: STDOUT: "b"usage: git [-v | --version] [-h | --help] [-C <path>] [-c <name>=<value>]\n           [--exec-path[=<path>]] [--html-path] [--man-path] [--info-path]\n           [-p | --paginate | -P | --no-pager] [--no-replace-objects] [--no-lazy-fetch]\n           [--no-optional-locks] [--no-advice] [--bare] [--git-dir=<path>]\n           [--work-tree=<path>] [--namespace=<name>] [--config-env=<name>=<envvar>]\n           <command> [<args>]\n\nThese are common Git commands used in various situations:\n\nstart a working area (see also: git help tutorial)\n   clone      Clone a repository into a new directory\n   init       Create an empty Git repository or reinitialize an existing one\n\nwork on the current change (see also: git help everyday)\n   add        Add file contents to the index\n   mv         Move or rename a file, a directory, or a symlink\n   restore    Restore working tree files\n   rm         Remove files from the working tree and from the index\n\nexamine the history and state (see also: git help revisions)\n   bisect     Use binary search to find the commit that introduced a bug\n   diff       Show changes between commits, commit and working tree, etc\n   grep       Print lines matching a pattern\n   log        Show commit logs\n   show       Show various types of objects\n   status     Show the working tree status\n\ngrow, mark and tweak your common history\n   backfill   Download missing objects in a partial clone\n   branch     List, create, or delete branches\n   commit     Record changes to the repository\n   merge      Join two or more development histories together\n   rebase     Reapply commits on top of another base tip\n   reset      Reset current HEAD to the specified state\n   switch     Switch branches\n   tag        Create, list, delete or verify a tag object signed with GPG\n\ncollaborate (see also: git help workflows)\n   fetch      Download objects and refs from another repository\n   pull       Fetch from and integrate with another repository or a local branch\n   push       Update remote refs along with associated objects\n\n'git help -a' and 'git help -g' list available subcommands and some\nconcept guides. See 'git help <command>' or 'git help <concept>'\nto read about a specific subcommand or concept.\nSee 'git help git' for an overview of the system.\n""
+[0m16:42:56.709292 [debug] [MainThread]: STDERR: "b''"
+[0m16:42:56.709292 [info ] [MainThread]:  - git [[32mOK found[0m]
+
+[0m16:42:56.710292 [info ] [MainThread]: Connection:
+[0m16:42:56.711294 [info ] [MainThread]:   host: postgres
+[0m16:42:56.716169 [info ] [MainThread]:   port: 5432
+[0m16:42:56.718334 [info ] [MainThread]:   user: airflow
+[0m16:42:56.719335 [info ] [MainThread]:   database: airflow
+[0m16:42:56.721334 [info ] [MainThread]:   schema: public
+[0m16:42:56.722335 [info ] [MainThread]:   connect_timeout: 10
+[0m16:42:56.724335 [info ] [MainThread]:   role: None
+[0m16:42:56.725335 [info ] [MainThread]:   search_path: None
+[0m16:42:56.726332 [info ] [MainThread]:   keepalives_idle: 0
+[0m16:42:56.727335 [info ] [MainThread]:   sslmode: None
+[0m16:42:56.728334 [info ] [MainThread]:   sslcert: None
+[0m16:42:56.734964 [info ] [MainThread]:   sslkey: None
+[0m16:42:56.737963 [info ] [MainThread]:   sslrootcert: None
+[0m16:42:56.738963 [info ] [MainThread]:   application_name: dbt
+[0m16:42:56.740962 [info ] [MainThread]:   retries: 1
+[0m16:42:56.743481 [info ] [MainThread]: Registered adapter: postgres=1.9.0
+[0m16:42:57.378150 [debug] [MainThread]: Acquiring new postgres connection 'debug'
+[0m16:43:01.507504 [debug] [MainThread]: Using postgres connection "debug"
+[0m16:43:01.508502 [debug] [MainThread]: On debug: select 1 as id
+[0m16:43:01.509505 [debug] [MainThread]: Opening a new connection, currently in state init
+[0m16:43:04.433332 [debug] [MainThread]: Postgres adapter: Got a retryable error when attempting to open a postgres connection.
+1 attempts remaining. Retrying in 0 seconds.
+Error:
+could not translate host name "postgres" to address: No such host is known. 
+
+[0m16:43:07.134201 [debug] [MainThread]: Postgres adapter: Error running SQL: select 1 as id
+[0m16:43:07.136202 [debug] [MainThread]: Postgres adapter: Rolling back transaction.
+[0m16:43:07.137200 [debug] [MainThread]: On debug: No close available on handle
+[0m16:43:07.138204 [info ] [MainThread]:   Connection test: [[31mERROR[0m]
+
+[0m16:43:07.140206 [info ] [MainThread]: [31m1 check failed:[0m
+[0m16:43:07.140948 [info ] [MainThread]: dbt was unable to connect to the specified database.
+The database returned the following error:
+
+  >Database Error
+  could not translate host name "postgres" to address: No such host is known. 
+  
+
+Check your database credentials and try again. For more information, visit:
+https://docs.getdbt.com/docs/configure-your-profile
+
+
+[0m16:43:07.142945 [debug] [MainThread]: Command `dbt debug` failed at 16:43:07.142945 after 11.33 seconds
+[0m16:43:07.143983 [debug] [MainThread]: Connection 'debug' was properly closed.
+[0m16:43:07.143983 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E7B01B3E10>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E7B063AAD0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001E7B05FE110>]}
+[0m16:43:07.144985 [debug] [MainThread]: Flushing usage events
+[0m16:43:08.400730 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m16:43:29.184933 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002ACDA3E29D0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002ACDA3E04D0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002ACDA3E3F10>]}
+
+
+============================== 16:43:29.189934 | 9a2fcaff-c4cc-4146-bb9b-4fecd715eb7a ==============================
+[0m16:43:29.189934 [info ] [MainThread]: Running with dbt=1.9.3
+[0m16:43:29.190937 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'write_json': 'True', 'log_cache_events': 'False', 'partial_parse': 'True', 'cache_selected_only': 'False', 'profiles_dir': '.', 'fail_fast': 'False', 'version_check': 'True', 'log_path': 'C:\\Users\\andry\\OneDrive\\Desktop\\Projects\\IMDb\\apache-airflow-dev-server\\dags\\dbt\\logs', 'debug': 'False', 'warn_error': 'None', 'use_colors': 'True', 'use_experimental_parser': 'False', 'empty': 'None', 'quiet': 'False', 'no_print': 'None', 'log_format': 'default', 'invocation_command': 'dbt ls --profiles-dir .', 'introspect': 'True', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'target_path': 'None', 'static_parser': 'True', 'send_anonymous_usage_stats': 'True'}
+[0m16:43:29.570068 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': '9a2fcaff-c4cc-4146-bb9b-4fecd715eb7a', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002ACDA5EBF50>]}
+[0m16:43:29.653544 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': '9a2fcaff-c4cc-4146-bb9b-4fecd715eb7a', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002ACD5FD4C50>]}
+[0m16:43:29.655549 [info ] [MainThread]: Registered adapter: postgres=1.9.0
+[0m16:43:30.225166 [debug] [MainThread]: checksum: 5671c00892cdbcef29c3b00cc5ba7510c3d18a35c883caeb9ab9ee266dc29c8f, vars: {}, profile: , target: , version: 1.9.3
+[0m16:43:30.620215 [debug] [MainThread]: Partial parsing enabled: 0 files deleted, 0 files added, 0 files changed.
+[0m16:43:30.620215 [debug] [MainThread]: Partial parsing enabled, no changes found, skipping parsing
+[0m16:43:30.694564 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'load_project', 'label': '9a2fcaff-c4cc-4146-bb9b-4fecd715eb7a', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002ACDA8057D0>]}
+[0m16:43:30.899331 [debug] [MainThread]: Wrote artifact WritableManifest to C:\Users\andry\OneDrive\Desktop\Projects\IMDb\apache-airflow-dev-server\dags\dbt\target\manifest.json
+[0m16:43:30.909329 [debug] [MainThread]: Wrote artifact SemanticManifest to C:\Users\andry\OneDrive\Desktop\Projects\IMDb\apache-airflow-dev-server\dags\dbt\target\semantic_manifest.json
+[0m16:43:30.992034 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'resource_counts', 'label': '9a2fcaff-c4cc-4146-bb9b-4fecd715eb7a', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002ACDA53BB50>]}
+[0m16:43:30.993036 [info ] [MainThread]: Found 16 models, 50 data tests, 7 sources, 549 macros
+[0m16:43:30.995037 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': '9a2fcaff-c4cc-4146-bb9b-4fecd715eb7a', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002ACDAB1BDD0>]}
+[0m16:43:31.005773 [info ] [MainThread]: imdb_analytics.intermediate.int_person_filmography
+[0m16:43:31.007772 [info ] [MainThread]: imdb_analytics.intermediate.int_title_complete
+[0m16:43:31.009770 [info ] [MainThread]: imdb_analytics.intermediate.int_title_hierarchies
+[0m16:43:31.019062 [info ] [MainThread]: imdb_analytics.intermediate.int_title_with_genres
+[0m16:43:31.021061 [info ] [MainThread]: imdb_analytics.intermediate.int_title_with_ratings
+[0m16:43:31.024768 [info ] [MainThread]: imdb_analytics.marts.mart_genre_analytics
+[0m16:43:31.027441 [info ] [MainThread]: imdb_analytics.marts.mart_person_career
+[0m16:43:31.034004 [info ] [MainThread]: imdb_analytics.marts.mart_series_analytics
+[0m16:43:31.037620 [info ] [MainThread]: imdb_analytics.marts.mart_top_titles
+[0m16:43:31.038645 [info ] [MainThread]: imdb_analytics.staging.stg_name_basics
+[0m16:43:31.040119 [info ] [MainThread]: imdb_analytics.staging.stg_title_basics
+[0m16:43:31.043132 [info ] [MainThread]: imdb_analytics.staging.stg_title_crew_directors
+[0m16:43:31.045142 [info ] [MainThread]: imdb_analytics.staging.stg_title_crew_writers
+[0m16:43:31.050683 [info ] [MainThread]: imdb_analytics.staging.stg_title_episode
+[0m16:43:31.053478 [info ] [MainThread]: imdb_analytics.staging.stg_title_principals
+[0m16:43:31.054698 [info ] [MainThread]: imdb_analytics.staging.stg_title_ratings
+[0m16:43:31.056137 [info ] [MainThread]: source:imdb_analytics.imdb.name_basics
+[0m16:43:31.057851 [info ] [MainThread]: source:imdb_analytics.imdb.title_akas
+[0m16:43:31.058906 [info ] [MainThread]: source:imdb_analytics.imdb.title_basics
+[0m16:43:31.060854 [info ] [MainThread]: source:imdb_analytics.imdb.title_crew
+[0m16:43:31.061754 [info ] [MainThread]: source:imdb_analytics.imdb.title_episode
+[0m16:43:31.068664 [info ] [MainThread]: source:imdb_analytics.imdb.title_principals
+[0m16:43:31.070244 [info ] [MainThread]: source:imdb_analytics.imdb.title_ratings
+[0m16:43:31.074905 [info ] [MainThread]: imdb_analytics.intermediate.accepted_values_int_person_filmography_role__actor__actress__director__writer__producer
+[0m16:43:31.076643 [info ] [MainThread]: imdb_analytics.intermediate.accepted_values_int_title_with_ratings_title_type__movie__short__tvEpisode__tvMovie__tvSeries__tvMiniSeries__tvSpecial__tvShort__video__videoGame
+[0m16:43:31.085265 [info ] [MainThread]: imdb_analytics.staging.accepted_values_stg_title_basics_is_adult__True__False
+[0m16:43:31.090542 [info ] [MainThread]: imdb_analytics.intermediate.dbt_utils_accepted_range_int_title_with_ratings_average_rating__True__10__0
+[0m16:43:31.092472 [info ] [MainThread]: imdb_analytics.intermediate.dbt_utils_accepted_range_int_title_with_ratings_start_year__2030__1850
+[0m16:43:31.093935 [info ] [MainThread]: imdb_analytics.intermediate.dbt_utils_at_least_one_int_title_complete_
+[0m16:43:31.103528 [info ] [MainThread]: imdb_analytics.intermediate.dbt_utils_unique_combination_of_columns_int_title_with_genres_tconst__genre
+[0m16:43:31.104539 [info ] [MainThread]: imdb_analytics.staging.dbt_utils_unique_combination_of_columns_stg_title_crew_directors_tconst__director
+[0m16:43:31.105538 [info ] [MainThread]: imdb_analytics.staging.dbt_utils_unique_combination_of_columns_stg_title_crew_writers_tconst__writer
+[0m16:43:31.107991 [info ] [MainThread]: imdb_analytics.intermediate.not_null_int_person_filmography_nconst
+[0m16:43:31.109201 [info ] [MainThread]: imdb_analytics.intermediate.not_null_int_person_filmography_role
+[0m16:43:31.111064 [info ] [MainThread]: imdb_analytics.intermediate.not_null_int_person_filmography_tconst
+[0m16:43:31.117744 [info ] [MainThread]: imdb_analytics.intermediate.not_null_int_title_complete_tconst
+[0m16:43:31.121129 [info ] [MainThread]: imdb_analytics.intermediate.not_null_int_title_hierarchies_episode_tconst
+[0m16:43:31.123111 [info ] [MainThread]: imdb_analytics.intermediate.not_null_int_title_hierarchies_series_tconst
+[0m16:43:31.124745 [info ] [MainThread]: imdb_analytics.intermediate.not_null_int_title_with_genres_genre
+[0m16:43:31.126354 [info ] [MainThread]: imdb_analytics.intermediate.not_null_int_title_with_genres_genre_rank
+[0m16:43:31.127716 [info ] [MainThread]: imdb_analytics.intermediate.not_null_int_title_with_genres_tconst
+[0m16:43:31.137829 [info ] [MainThread]: imdb_analytics.intermediate.not_null_int_title_with_ratings_average_rating
+[0m16:43:31.138841 [info ] [MainThread]: imdb_analytics.intermediate.not_null_int_title_with_ratings_tconst
+[0m16:43:31.139840 [info ] [MainThread]: imdb_analytics.marts.not_null_mart_genre_analytics_genre
+[0m16:43:31.141843 [info ] [MainThread]: imdb_analytics.marts.not_null_mart_person_career_nconst
+[0m16:43:31.143843 [info ] [MainThread]: imdb_analytics.marts.not_null_mart_series_analytics_series_tconst
+[0m16:43:31.144842 [info ] [MainThread]: imdb_analytics.marts.not_null_mart_top_titles_tconst
+[0m16:43:31.151373 [info ] [MainThread]: imdb_analytics.staging.not_null_stg_name_basics_first_profession
+[0m16:43:31.152374 [info ] [MainThread]: imdb_analytics.staging.not_null_stg_name_basics_first_title_known_for
+[0m16:43:31.153376 [info ] [MainThread]: imdb_analytics.staging.not_null_stg_name_basics_primary_name
+[0m16:43:31.154374 [info ] [MainThread]: imdb_analytics.staging.not_null_stg_title_basics_primary_genre
+[0m16:43:31.157374 [info ] [MainThread]: imdb_analytics.staging.not_null_stg_title_basics_primary_title
+[0m16:43:31.160375 [info ] [MainThread]: imdb_analytics.staging.not_null_stg_title_basics_start_year
+[0m16:43:31.169725 [info ] [MainThread]: imdb_analytics.staging.not_null_stg_title_basics_tconst
+[0m16:43:31.170943 [info ] [MainThread]: imdb_analytics.staging.not_null_stg_title_crew_directors_director
+[0m16:43:31.171939 [info ] [MainThread]: imdb_analytics.staging.not_null_stg_title_crew_directors_tconst
+[0m16:43:31.172941 [info ] [MainThread]: imdb_analytics.staging.not_null_stg_title_crew_writers_tconst
+[0m16:43:31.173939 [info ] [MainThread]: imdb_analytics.staging.not_null_stg_title_crew_writers_writer
+[0m16:43:31.175939 [info ] [MainThread]: imdb_analytics.staging.not_null_stg_title_episode_parent_tconst
+[0m16:43:31.177453 [info ] [MainThread]: imdb_analytics.staging.not_null_stg_title_episode_tconst
+[0m16:43:31.184020 [info ] [MainThread]: imdb_analytics.staging.not_null_stg_title_principals_category
+[0m16:43:31.186145 [info ] [MainThread]: imdb_analytics.staging.not_null_stg_title_ratings_average_rating
+[0m16:43:31.187157 [info ] [MainThread]: imdb_analytics.staging.not_null_stg_title_ratings_num_votes
+[0m16:43:31.188158 [info ] [MainThread]: imdb_analytics.intermediate.relationships_int_title_hierarchies_episode_tconst__tconst__ref_stg_title_basics_
+[0m16:43:31.189156 [info ] [MainThread]: imdb_analytics.intermediate.unique_int_title_complete_tconst
+[0m16:43:31.190160 [info ] [MainThread]: imdb_analytics.intermediate.unique_int_title_hierarchies_episode_tconst
+[0m16:43:31.193156 [info ] [MainThread]: imdb_analytics.marts.unique_mart_genre_analytics_genre
+[0m16:43:31.195158 [info ] [MainThread]: imdb_analytics.marts.unique_mart_person_career_nconst
+[0m16:43:31.201496 [info ] [MainThread]: imdb_analytics.marts.unique_mart_series_analytics_series_tconst
+[0m16:43:31.203509 [info ] [MainThread]: imdb_analytics.marts.unique_mart_top_titles_tconst
+[0m16:43:31.204506 [info ] [MainThread]: imdb_analytics.staging.unique_stg_name_basics_nconst
+[0m16:43:31.206507 [info ] [MainThread]: imdb_analytics.staging.unique_stg_title_basics_tconst
+[0m16:43:31.209512 [info ] [MainThread]: imdb_analytics.staging.unique_stg_title_ratings_tconst
+[0m16:43:31.211508 [debug] [MainThread]: Command `dbt ls` succeeded at 16:43:31.211508 after 2.14 seconds
+[0m16:43:31.219983 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002ACD26A3E10>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002ACD2B4DCD0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002ACDA5EB690>]}
+[0m16:43:31.220985 [debug] [MainThread]: Flushing usage events
+[0m16:43:32.563014 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m16:43:47.508804 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001A05A502ED0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001A05908B650>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001A05A503C90>]}
+
+
+============================== 16:43:47.515630 | 0b0578a1-17b9-4cab-8223-eb459721dd96 ==============================
+[0m16:43:47.515630 [info ] [MainThread]: Running with dbt=1.9.3
+[0m16:43:47.517633 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'log_cache_events': 'False', 'write_json': 'True', 'partial_parse': 'True', 'cache_selected_only': 'False', 'profiles_dir': '.', 'debug': 'False', 'version_check': 'True', 'log_path': 'C:\\Users\\andry\\OneDrive\\Desktop\\Projects\\IMDb\\apache-airflow-dev-server\\dags\\dbt\\logs', 'warn_error': 'None', 'fail_fast': 'False', 'use_colors': 'True', 'use_experimental_parser': 'False', 'empty': 'False', 'quiet': 'False', 'no_print': 'None', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'invocation_command': 'dbt compile --profiles-dir .', 'static_parser': 'True', 'introspect': 'True', 'target_path': 'None', 'log_format': 'default', 'send_anonymous_usage_stats': 'True'}
+[0m16:43:47.894455 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': '0b0578a1-17b9-4cab-8223-eb459721dd96', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001A05A703B90>]}
+[0m16:43:48.023718 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': '0b0578a1-17b9-4cab-8223-eb459721dd96', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001A0560F4C10>]}
+[0m16:43:48.024721 [info ] [MainThread]: Registered adapter: postgres=1.9.0
+[0m16:43:48.556358 [debug] [MainThread]: checksum: 5671c00892cdbcef29c3b00cc5ba7510c3d18a35c883caeb9ab9ee266dc29c8f, vars: {}, profile: , target: , version: 1.9.3
+[0m16:43:48.873461 [debug] [MainThread]: Partial parsing enabled: 0 files deleted, 0 files added, 0 files changed.
+[0m16:43:48.874463 [debug] [MainThread]: Partial parsing enabled, no changes found, skipping parsing
+[0m16:43:48.954261 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'load_project', 'label': '0b0578a1-17b9-4cab-8223-eb459721dd96', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001A05AAFA490>]}
+[0m16:43:49.154153 [debug] [MainThread]: Wrote artifact WritableManifest to C:\Users\andry\OneDrive\Desktop\Projects\IMDb\apache-airflow-dev-server\dags\dbt\target\manifest.json
+[0m16:43:49.170144 [debug] [MainThread]: Wrote artifact SemanticManifest to C:\Users\andry\OneDrive\Desktop\Projects\IMDb\apache-airflow-dev-server\dags\dbt\target\semantic_manifest.json
+[0m16:43:49.219796 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'resource_counts', 'label': '0b0578a1-17b9-4cab-8223-eb459721dd96', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001A057D29790>]}
+[0m16:43:49.220793 [info ] [MainThread]: Found 16 models, 50 data tests, 7 sources, 549 macros
+[0m16:43:49.221796 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': '0b0578a1-17b9-4cab-8223-eb459721dd96', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001A05AC3E6D0>]}
+[0m16:43:49.225792 [info ] [MainThread]: 
+[0m16:43:49.226792 [info ] [MainThread]: Concurrency: 4 threads (target='dev')
+[0m16:43:49.227796 [info ] [MainThread]: 
+[0m16:43:49.233373 [debug] [MainThread]: Acquiring new postgres connection 'master'
+[0m16:43:49.240371 [debug] [ThreadPool]: Acquiring new postgres connection 'list_airflow_public'
+[0m16:43:49.532422 [debug] [ThreadPool]: Using postgres connection "list_airflow_public"
+[0m16:43:49.533424 [debug] [ThreadPool]: On list_airflow_public: BEGIN
+[0m16:43:49.534422 [debug] [ThreadPool]: Opening a new connection, currently in state init
+[0m16:43:52.282635 [debug] [ThreadPool]: Postgres adapter: Got a retryable error when attempting to open a postgres connection.
+1 attempts remaining. Retrying in 0 seconds.
+Error:
+could not translate host name "postgres" to address: No such host is known. 
+
+[0m16:43:54.965537 [debug] [ThreadPool]: Postgres adapter: Error running SQL: BEGIN
+[0m16:43:54.967771 [debug] [ThreadPool]: Postgres adapter: Rolling back transaction.
+[0m16:43:54.968770 [debug] [ThreadPool]: Postgres adapter: Error running SQL: macro list_relations_without_caching
+[0m16:43:54.969770 [debug] [ThreadPool]: Postgres adapter: Rolling back transaction.
+[0m16:43:54.970770 [debug] [ThreadPool]: On list_airflow_public: No close available on handle
+[0m16:43:54.971771 [debug] [MainThread]: Connection 'master' was properly closed.
+[0m16:43:54.972770 [debug] [MainThread]: Connection 'list_airflow_public' was properly closed.
+[0m16:43:54.974770 [error] [MainThread]: Encountered an error:
+Database Error
+  could not translate host name "postgres" to address: No such host is known. 
+  
+[0m16:43:54.976769 [debug] [MainThread]: Command `dbt compile` failed at 16:43:54.976769 after 7.57 seconds
+[0m16:43:54.977772 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001A0528A3E10>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001A059270A10>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001A052D2B6D0>]}
+[0m16:43:54.977772 [debug] [MainThread]: Flushing usage events
+[0m16:43:56.140052 [debug] [MainThread]: An error was encountered while trying to flush usage events

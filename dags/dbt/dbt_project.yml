@@ -26,7 +26,3 @@ models:
       materialized: table
 
 require-dbt-version: ">=1.0.0,<2.0.0"
-
-packages:
-  - package: dbt-labs/dbt_utils
-    version: ">=0.7.0,<2.0.0"
