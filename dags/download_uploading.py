@@ -317,7 +317,8 @@ def fetch_imdb_dataset(file_key: str) -> None:
         - Skips remote validation if cache was checked within last hour
         - Only downloads if remote file is newer than cached version
         - Uses exponential backoff with jitter for retry timing
-    """    os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+    """    
+    os.makedirs(DOWNLOAD_DIR, exist_ok=True)
     filename = IMDB_FILES[file_key]
     file_url = BASE_URL + filename
     filepath = os.path.join(DOWNLOAD_DIR, filename)
@@ -439,7 +440,8 @@ def load_imdb_table(file_key: str) -> None:
         - Uses COPY command for 10-100x faster loading than INSERT statements
         - Processes files in streaming mode to minimize memory usage
         - Truncates tables before loading to prevent duplicate key errors
-    """    try:
+    """    
+    try:
         context = get_current_context()
         task_instance = context.get('task_instance')
     except:
@@ -512,7 +514,9 @@ def load_imdb_table(file_key: str) -> None:
     # File path configuration
     schema_file_path = os.path.join(SCHEMA_DIR, f"{table_name}.sql")
     gz_path = os.path.join(DOWNLOAD_DIR, IMDB_FILES[file_key])
-    uncompressed_tsv_path = os.path.join(DOWNLOAD_DIR, f"{file_key}.tsv")    try:
+    uncompressed_tsv_path = os.path.join(DOWNLOAD_DIR, f"{file_key}.tsv")    
+    
+    try:
         # Create table schema if it doesn't exist
         update_heartbeat("Creating table schema if not exists")
         setup_table_schema(cur, schema_file_path, table_name)
@@ -762,7 +766,8 @@ def create_dbt_task_group(load_tasks):
     # STAGING LAYER: Raw data cleaning and standardization
     stg_render_config = RenderConfig(
         load_method=LoadMode.DBT_MANIFEST,      # Use manifest for faster parsing
-        test_behavior=TestBehavior.AFTER_ALL,   # Run tests after all staging models complete
+        test_behavior=TestBehavior.AFTER_EACH,   # Comment needed
+        should_detach_multiple_parents_tests = True, # Comment needed
         select=["tag:staging"],                 # Only run models tagged with 'staging'
     )
     
@@ -782,8 +787,9 @@ def create_dbt_task_group(load_tasks):
 
     # INTERMEDIATE LAYER: Business logic and calculated fields
     int_render_config = RenderConfig(
-        load_method=LoadMode.DBT_MANIFEST,
-        test_behavior=TestBehavior.AFTER_ALL,   # Run tests after all intermediate models complete
+        load_method=LoadMode.DBT_MANIFEST,      # Use manifest for faster parsing
+        test_behavior=TestBehavior.AFTER_EACH,   # Comment needed
+        should_detach_multiple_parents_tests = True, # Comment needed
         select=["tag:intermediate"],            # Only run models tagged with 'intermediate'
     )
 
@@ -804,7 +810,7 @@ def create_dbt_task_group(load_tasks):
     # MARTS LAYER: Final analytical tables and aggregations
     mart_render_config = RenderConfig(
         load_method=LoadMode.DBT_MANIFEST,
-        test_behavior=TestBehavior.AFTER_ALL,   # Run tests after all mart models complete
+        # test_behavior=TestBehavior.AFTER_EACH,   # Comment needed
         select=["tag:marts"],                   # Only run models tagged with 'marts'
     )
 
