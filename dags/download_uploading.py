@@ -48,6 +48,7 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 from cosmos import DbtDag, DbtTaskGroup, ProjectConfig, ProfileConfig, ExecutionConfig, RenderConfig
 from cosmos.profiles import PostgresUserPasswordProfileMapping
 from cosmos.constants import LoadMode
+from cosmos.constants import TestBehavior
 
 # Initialize Airflow logger
 log = LoggingMixin().log
@@ -553,20 +554,48 @@ def create_dbt_task_group(load_tasks):
     render_config = RenderConfig(
         load_method=LoadMode.DBT_MANIFEST,
     )
-    tg = DbtTaskGroup(
-        group_id="dbt_transformations",
+    stg = DbtTaskGroup(
+        group_id="dbt_staging",
         project_config=project_config,
-        profile_config=profile_config,
-        execution_config=ExecutionConfig(dbt_executable_path="/usr/local/bin/dbt"),
-        render_config=render_config,
         
+        render_config=RenderConfig(
+            test_behavior=TestBehavior.AFTER_ALL,
+        ), # each model becomes a single task, and the tests only run if all models are run successfully
+        profile_config=profile_config,
         operator_args={
-            "install_deps": True,
+        "install_deps": True,  # install any necessary dependencies before running any dbt command
         },
-        default_args={"retries": 2, "retry_delay": timedelta(minutes=3)},
+        default_args={ "retries": 2, "retry_delay": timedelta(minutes=3) },
     )
-    load_tasks >> tg
-    return tg
+
+    itg = DbtTaskGroup(
+        group_id="dbt_intermediate",
+        project_config=project_config,
+        render_config=RenderConfig(
+            test_behavior=TestBehavior.AFTER_ALL,
+        ), # each model becomes a single task, and the tests only run if all models are run successfully
+        profile_config=profile_config,
+        operator_args={
+        "install_deps": True,  # install any necessary dependencies before running any dbt command
+        },
+        default_args={ "retries": 2, "retry_delay": timedelta(minutes=3) },
+    )
+
+    mrt = DbtTaskGroup(
+        group_id="dbt_marts",
+        project_config=project_config,
+        render_config=RenderConfig(
+            test_behavior=TestBehavior.AFTER_ALL,
+        ), # each model becomes a single task, and the tests only run if all models are run successfully
+        profile_config=profile_config,
+        operator_args={
+        "install_deps": True,  # install any necessary dependencies before running any dbt command
+        },
+        default_args={ "retries": 2, "retry_delay": timedelta(minutes=3) },
+    )
+
+    # wire up dependencies
+    load_tasks >> stg >> itg >> mrt
 
 with dag:
     # Create download and load tasks for each IMDb file
