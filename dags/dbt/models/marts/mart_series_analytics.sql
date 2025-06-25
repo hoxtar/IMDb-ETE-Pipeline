@@ -1,3 +1,6 @@
+-- models/marts/mart_series_analytics.sql
+-- filepath: c:\Users\andry\OneDrive\Desktop\Projects\IMDb\apache-airflow-dev-server\dags\dbt\models\marts\mart_series_analytics.sql
+
 {{ config(
     materialized = 'table',
     tags = ['marts']
@@ -16,7 +19,6 @@ episode_data AS (
         th.series_tconst,
         th.episode_tconst,
         th.series_title,
-        th.episode_title,
         th.season_number,
         th.episode_number,
         th.episode_year,
@@ -24,6 +26,25 @@ episode_data AS (
         tc.num_votes
     FROM title_hierarchies th
     LEFT JOIN title_complete tc ON th.episode_tconst = tc.tconst
+),
+
+-- Pre-calculate max season per series
+series_seasons AS (
+    SELECT 
+        series_tconst,
+        MAX(season_number) AS max_season
+    FROM episode_data
+    GROUP BY series_tconst
+),
+
+-- Add max season info to episode data
+enriched_episode_data AS (
+    SELECT 
+        ed.*,
+        ss.max_season,
+        CASE WHEN ed.season_number = ss.max_season THEN ed.average_rating END AS last_season_rating
+    FROM episode_data ed
+    LEFT JOIN series_seasons ss ON ed.series_tconst = ss.series_tconst
 )
 
 SELECT
@@ -48,18 +69,18 @@ SELECT
     -- Popular episodes
     COUNT(DISTINCT CASE WHEN ed.average_rating > 8.0 THEN ed.episode_tconst END) AS highly_rated_episodes,
     
-    -- Trend analysis
+    -- Trend analysis (fixed)
     CASE
         WHEN CORR(ed.average_rating, ed.season_number) > 0.1 THEN 'Improving'
         WHEN CORR(ed.average_rating, ed.season_number) < -0.1 THEN 'Declining'
         ELSE 'Stable'
     END AS rating_trend,
     
-    -- First season vs. last season comparison
+    -- First season vs. last season comparison (fixed)
     AVG(CASE WHEN ed.season_number = 1 THEN ed.average_rating END) AS first_season_avg_rating,
-    AVG(CASE WHEN ed.season_number = MAX(ed.season_number) OVER (PARTITION BY ed.series_tconst) 
-             THEN ed.average_rating END) AS last_season_avg_rating
-FROM episode_data ed
+    AVG(ed.last_season_rating) AS last_season_avg_rating  -- Fixed: no more window function in aggregate
+
+FROM enriched_episode_data ed
 LEFT JOIN title_complete tc ON ed.series_tconst = tc.tconst
 GROUP BY 
     ed.series_tconst,
