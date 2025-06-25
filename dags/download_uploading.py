@@ -765,10 +765,15 @@ def create_dbt_task_group(load_tasks):
 
     # STAGING LAYER: Raw data cleaning and standardization
     stg_render_config = RenderConfig(
-        load_method=LoadMode.DBT_MANIFEST,      # Use manifest for faster parsing
-        test_behavior=TestBehavior.AFTER_EACH,   # Comment needed
-        should_detach_multiple_parents_tests = True, # Comment needed
-        select=["tag:staging"],                 # Only run models tagged with 'staging'
+        load_method=LoadMode.DBT_MANIFEST,
+        test_behavior=TestBehavior.AFTER_ALL,              # run tests once after all stg_* models
+        should_detach_multiple_parents_tests=True,         # don’t attach multi-parent tests (e.g. relationships)
+        select=["tag:staging"],                            # only models/tests tagged staging
+        exclude=[
+            # "relationships_*",  # Exclude cross-layer relationship tests
+            "tag:intermediate", 
+            "tag:marts"
+        ],
     )
     
     stg = DbtTaskGroup(
@@ -788,9 +793,11 @@ def create_dbt_task_group(load_tasks):
     # INTERMEDIATE LAYER: Business logic and calculated fields
     int_render_config = RenderConfig(
         load_method=LoadMode.DBT_MANIFEST,      # Use manifest for faster parsing
-        test_behavior=TestBehavior.AFTER_EACH,   # Comment needed
+        test_behavior=TestBehavior.AFTER_ALL,   # Comment needed
         should_detach_multiple_parents_tests = True, # Comment needed
         select=["tag:intermediate"],            # Only run models tagged with 'intermediate'
+        exclude=["tag:marts"],  # Only exclude marts, allow relationship tests here
+
     )
 
     itg = DbtTaskGroup(
@@ -810,7 +817,7 @@ def create_dbt_task_group(load_tasks):
     # MARTS LAYER: Final analytical tables and aggregations
     mart_render_config = RenderConfig(
         load_method=LoadMode.DBT_MANIFEST,
-        # test_behavior=TestBehavior.AFTER_EACH,   # Comment needed
+        test_behavior=TestBehavior.AFTER_ALL,   # Comment needed
         select=["tag:marts"],                   # Only run models tagged with 'marts'
     )
 
