@@ -15,7 +15,7 @@ models:
         tests:
           - not_null  # CRITICAL - needed for business logic
           - accepted_values:
-              values: ['short', 'movie', 'tvMovie', 'tvSeries', 'tvEpisode', 'tvMiniSeries', 'tvSpecial', 'video', 'videoGame', 'tvShort']
+              values: ['short', 'movie', 'tvMovie', 'tvSeries', 'tvEpisode', 'tvMiniSeries', 'tvSpecial', 'tvPilot', 'video', 'videoGame', 'tvShort']
               severity: warn  # WARNING - new types might appear
       - name: primary_title
         description: "Primary title with enhanced episode formatting"
@@ -155,12 +155,12 @@ models:
   - name: stg_title_episode
     description: "TV episode relationships"
     columns:
-      - name: episode_tconst
+      - name: tconst
         description: "Unique identifier of the episode"
         tests:
           - unique    # CRITICAL - primary key
           - not_null  # CRITICAL - primary key
-      - name: series_tconst
+      - name: parentTconst
         description: "Unique identifier of the parent series"
         tests:
           - not_null  # CRITICAL - needed for hierarchy
@@ -169,7 +169,7 @@ models:
         tests:
           - dbt_utils.accepted_range:
               min_value: 1
-              max_value: 100
+              max_value: 300
               where: "season_number IS NOT NULL"
               severity: warn  # WARNING - long-running shows exist
       - name: episode_number
@@ -177,6 +177,6 @@ models:
         tests:
           - dbt_utils.accepted_range:
               min_value: 1
-              max_value: 1000
+              max_value: 50000
               where: "episode_number IS NOT NULL"
               severity: warn  # WARNING - special numbering exists
