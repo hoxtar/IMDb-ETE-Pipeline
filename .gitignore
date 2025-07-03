@@ -10,3 +10,4 @@ webserver_config.py
 airflow.cfg
 airflow.db
 imdb_data/
+IMDb Analytics dbt Project - Data Stra.md

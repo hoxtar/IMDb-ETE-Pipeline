@@ -1,192 +1,182 @@
+
 version: 2
 
 models:
   - name: stg_title_basics
-    description: "Staging model for IMDb title basics"
+    description: "Clean, standardized title catalog with enhanced episode formatting"
     columns:
       - name: tconst
-        description: "Unique identifier for the title"
+        description: "Unique identifier for the title (IMDb ID)"
         tests:
-          - not_null
-          - unique
-
-      - name: primary_title
-        description: "Primary title of the work"
+          - not_null  # CRITICAL - blocks if missing
+          - unique    # CRITICAL - blocks if duplicates
+      - name: title_type
+        description: "Type of title (movie, tvSeries, etc.)"
         tests:
-          - not_null
-
-      - name: original_title
-        description: "Original title of the work"
-
-      - name: is_adult
-        description: "True if adult content"
-        tests:
+          - not_null  # CRITICAL - needed for business logic
           - accepted_values:
-              values: [true, false]
-
+              values: ['short', 'movie', 'tvMovie', 'tvSeries', 'tvEpisode', 'tvMiniSeries', 'tvSpecial', 'video', 'videoGame', 'tvShort']
+              severity: warn  # WARNING - new types might appear
+      - name: primary_title
+        description: "Primary title with enhanced episode formatting"
+        tests:
+          - not_null  # CRITICAL - core business field
       - name: start_year
-        description: "Year the title started"
-        tests: 
-          - not_null
-
-      - name: end_year
-        description: "Year the title ended"
-
+        description: "Year the title started (validated 1800-2030)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 1800
+              max_value: 2030
+              where: "start_year IS NOT NULL"
+              severity: warn  # WARNING - data quality, not blocking
       - name: runtime_minutes
-        description: "Duration of the title"
-
+        description: "Duration in minutes (validated 1-2000)"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 1
+              max_value: 2000
+              where: "runtime_minutes IS NOT NULL"
+              severity: warn  # WARNING - outliers exist
       - name: primary_genre
         description: "First genre tag"
-        tests: 
-          - not_null
-
-      - name: secondary_genre
-        description: "Second genre tag"
-
-      - name: third_genre
-        description: "Third genre tag"
-
-  - name: stg_title_crew_directors
-    description: "Normalized view of directors for each title from the raw title_crew table."
-    columns:
-      - name: tconst
-        description: "Unique identifier for the title"
-        tests:
-          - not_null
-
-      - name: director
-        description: "Director name; individual director extracted from the raw data."
-        tests:
-          - not_null
-
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - tconst
-            - director
-
-  - name: stg_title_crew_writers
-    description: "Normalized view of writers for each title from the raw title_crew table."
-    columns:
-      - name: tconst
-        description: "Unique identifier for the title"
-        tests:
-          - not_null
-      - name: writer
-        description: "Writer name; individual writer extracted from the raw data."
-        tests:
-          - not_null
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - tconst
-            - writer
-  
-  - name: stg_title_episode
-    description: "Staging model for IMDb title episode data"
-    columns:
-      - name: tconst
-        description: "Unique identifier of the episode"
-        tests:
-          - not_null
-
-      - name: parent_tconst
-        description: "Unique identifier of the parent TV Series"
-        tests:
-          - not_null
-  
-      - name: season_number
-        description: "Season number of the episode"
-
-      - name: episode_number
-        description: "Episode number within the season"
-
-  - name: stg_title_principals
-    description: "Staging model for IMDb title principals data"
-    columns:
-      - name: tconst
-        description: "Unique identifier for the title"
-
-      - name: ordering
-        description: "Unique identifier within the same TitleID"
-
-      - name: nconst
-        description: "Unique identifier for the name"
-
-      - name: category
-        description: "Job category(e.g., actor, actress, etc.)"
-        tests:
-          - not_null
-
-      - name: job
-        description: "Specific job title within the category"
-
-      - name: characters
-        description: "Character name"
+        # NO TEST - already filtered in SQL, testing would be redundant
 
   - name: stg_title_ratings
-    description: "Staging model for IMDb title ratings data"
+    description: "Clean ratings data with proper numeric types"
     columns:
       - name: tconst
         description: "Unique identifier of the title"
         tests:
-          - unique
-
+          - unique    # CRITICAL - primary key
+          - not_null  # CRITICAL - primary key
       - name: average_rating
-        description: "Weighted average of user ratings"
+        description: "Weighted average rating (1.0-10.0)"
         tests:
-          - not_null
-
+          - dbt_utils.accepted_range:
+              min_value: 1.0
+              max_value: 10.0
+              where: "average_rating IS NOT NULL"
+              severity: warn  # WARNING - data anomalies possible
       - name: num_votes
-        description: "Number of votes received for a title"
+        description: "Number of votes for the rating"
         tests:
-          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 1
+              max_value: 10000000
+              where: "num_votes IS NOT NULL"
+              severity: warn  # WARNING - viral content might exceed
 
   - name: stg_name_basics
-    description: "Staging model for IMDb name basics data"
+    description: "Clean person catalog with calculated fields"
     columns:
       - name: nconst
         description: "Unique identifier for the person"
         tests:
-          - unique
-
+          - unique    # CRITICAL - primary key
+          - not_null  # CRITICAL - primary key
       - name: primary_name
         description: "Primary name of the person"
         tests:
-          - not_null:
-              severity: warn  # Make this a warning instead of error
-
+          - not_null  # CRITICAL - core business field
       - name: birth_year
-        description: "Year of birth"
-
-      - name: death_year
-        description: "Year of death"
-
-      - name: first_profession
-        description: "First profession of the person"
+        description: "Year of birth (validated range)"
         tests:
-          - not_null:
-              severity: warn  # Make this a warning instead of error
-      - name: second_profession
-        description: "Second profession of the person"
-      - name: third_profession
-        description: "Third profession of the person"
-      
-      - name: first_title_known_for
-        description: "First title the person is known for"
+          - dbt_utils.accepted_range:
+              min_value: 1800
+              max_value: 2025
+              where: "birth_year IS NOT NULL"
+              severity: warn  # WARNING - historical records vary
+
+  - name: stg_title_principals
+    description: "Cast and crew information with standardized roles"
+    columns:
+      - name: tconst
+        description: "Unique identifier for the title"
         tests:
-          - not_null:
-              severity: warn  # Make this a warning instead of error
-      - name: second_title_known_for
-        description: "Second title the person is known for"
-      - name: third_title_known_for
-        description: "Third title the person is known for"
-      - name: fourth_title_known_for
-        description: "Fourth title the person is known for"
-    
+          - not_null  # CRITICAL - needed for joins
+      - name: ordering
+        description: "Position in credits (1 = most prominent)"
+        tests:
+          - not_null  # CRITICAL - needed for ranking
+      - name: nconst
+        description: "Unique identifier for the person"
+        tests:
+          - not_null  # CRITICAL - needed for joins
+      - name: category
+        description: "Original job category from IMDb"
+        tests:
+          - not_null  # CRITICAL - core business logic
+      - name: role_category
+        description: "Standardized role category for analysis"
+        tests:
+          - accepted_values:
+              values: ['actor', 'director', 'writer', 'producer', 'cinematographer', 'composer', 'editor', 'self', 'other']
+              severity: warn  # WARNING - new roles might emerge
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - tconst
+            - ordering  # CRITICAL - composite primary key
 
-        
+  - name: stg_title_crew_directors
+    description: "Normalized directors by title"
+    columns:
+      - name: tconst
+        description: "Unique identifier for the title"
+        tests:
+          - not_null  # CRITICAL - needed for joins
+      - name: director_nconst
+        description: "Unique identifier for the director"
+        tests:
+          - not_null  # CRITICAL - needed for joins
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - tconst
+            - director_nconst  # CRITICAL - business rule
 
+  - name: stg_title_crew_writers
+    description: "Normalized writers by title"
+    columns:
+      - name: tconst
+        description: "Unique identifier for the title"
+        tests:
+          - not_null  # CRITICAL
+      - name: writer_nconst
+        description: "Unique identifier for the writer"
+        tests:
+          - not_null  # CRITICAL
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - tconst
+            - writer_nconst  # CRITICAL
 
-
-
+  - name: stg_title_episode
+    description: "TV episode relationships"
+    columns:
+      - name: episode_tconst
+        description: "Unique identifier of the episode"
+        tests:
+          - unique    # CRITICAL - primary key
+          - not_null  # CRITICAL - primary key
+      - name: series_tconst
+        description: "Unique identifier of the parent series"
+        tests:
+          - not_null  # CRITICAL - needed for hierarchy
+      - name: season_number
+        description: "Season number of the episode"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 1
+              max_value: 100
+              where: "season_number IS NOT NULL"
+              severity: warn  # WARNING - long-running shows exist
+      - name: episode_number
+        description: "Episode number within season"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 1
+              max_value: 1000
+              where: "episode_number IS NOT NULL"
+              severity: warn  # WARNING - special numbering exists

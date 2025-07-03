@@ -2,7 +2,7 @@ my_imdb_project:
   outputs:
     dev:
       type: postgres
-      host: postgres #in case of dbt docs comand trouble use localhost
+      host: postgres
       user: airflow
       pass: airflow
       port: 5433
