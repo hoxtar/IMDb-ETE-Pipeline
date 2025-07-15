@@ -1,12 +1,12 @@
 {
-    "path_count": 197,
+    "path_count": 199,
     "parsed_path_count": 0,
     "static_analysis_path_count": 0,
     "static_analysis_parsed_path_count": 0,
     "is_partial_parse_enabled": true,
     "is_static_analysis_enabled": true,
-    "read_files_elapsed": 1.7709274999999707,
-    "load_all_elapsed": 2.050296600000138,
+    "read_files_elapsed": 0.3799607999972068,
+    "load_all_elapsed": 1.0469026000064332,
     "projects": [
         {
             "project_name": "imdb_analytics",
