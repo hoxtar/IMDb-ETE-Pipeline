@@ -1,41 +1,41 @@
-# IMDb dbt Transformation Layer
+# IMDb Analytics dbt Project
 
-[![dbt Version](https://img.shields.io/badge/dbt-1.4.6-purple)]()
-[![Models](https://img.shields.io/badge/Models-16%20Total-blue)]()
+[![dbt Version](https://img.shields.io/badge/dbt-1.4.6+-purple)]()
+[![Models](https://img.shields.io/badge/Models-15%20Total-blue)]()
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-13-blue)]()
 [![Cosmos](https://img.shields.io/badge/Cosmos_Integrated-✅-green)]()
 [![Status](https://img.shields.io/badge/Status-Production_Ready-brightgreen)]()
 
-## 🎯 Overview
+## Overview
 
 **Production-ready dbt project** that transforms raw IMDb data into analytics-ready dimensional models using industry best practices. Integrated with Airflow via Astronomer Cosmos for seamless orchestration and monitoring.
 
-### 📊 Project Metrics
-- **16 Total Models**: 7 staging, 5 intermediate, 4 marts
+### Project Metrics
+- **15 Total Models**: 7 staging, 4 intermediate, 4 marts
 - **Layer-based Architecture**: Staging → Intermediate → Marts
-- **Comprehensive Testing**: 25+ data quality tests
+- **Comprehensive Testing**: 66+ data quality tests
 - **Complete Documentation**: All models and columns documented
 - **Strategic Materialization**: Views for staging/intermediate, tables for marts
 - **Cosmos Integration**: Automated Airflow task generation with layer-based execution
 
-### 🏆 Expert Assessment
+### Expert Assessment
 
-**✅ Strengths & Best Practices:**
-- **🏗️ Modular Architecture**: Clear separation between data cleaning, business logic, and analytics
-- **⚡ Transformation Strategy**: Efficient handling of complex data structures (arrays, nested fields)
-- **🧪 Robust Testing Framework**: Column-level, relationship, and business logic validation
-- **📚 Comprehensive Documentation**: Detailed descriptions for all models and fields
-- **🎯 Smart Materialization**: Performance-optimized view/table strategy
-- **🔄 Cosmos Integration**: Seamless Airflow orchestration with dependency management
+**Strengths & Best Practices:**
+- **Modular Architecture**: Clear separation between data cleaning, business logic, and analytics
+- **Transformation Strategy**: Efficient handling of complex data structures (arrays, nested fields)
+- **Robust Testing Framework**: Column-level, relationship, and business logic validation
+- **Comprehensive Documentation**: Detailed descriptions for all models and fields
+- **Smart Materialization**: Performance-optimized view/table strategy
+- **Cosmos Integration**: Seamless Airflow orchestration with dependency management
 
-### 🚀 Production Features
+### Production Features
 - **Layer-based Execution**: Separate Airflow task groups for each transformation layer
 - **Dependency Management**: Proper model dependencies preserved in Airflow task graph
 - **Error Isolation**: Failed transformations don't block upstream layers
 - **Performance Monitoring**: Execution metrics tracked in Airflow UI
 - **Automated Testing**: Data quality validation after each layer completion
 
-## 🏗️ Architecture & Data Flow
+## Architecture & Data Flow
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
@@ -81,17 +81,17 @@ Raw IMDb Tables              Staging Layer               Intermediate Layer     
                          │ • Source Freshness   │
                          └──────────────────────┘
 
-📊 Layer Statistics:
+Layer Statistics:
 ├─ Staging: 7 models (views) - Data cleaning & standardization
-├─ Intermediate: 5 models (views) - Business logic & relationships  
+├─ Intermediate: 4 models (views) - Business logic & relationships  
 └─ Marts: 4 models (tables) - Analytics-ready aggregations
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 dbt/                                          # 🎯 dbt Transformation Project
-├── 📊 models/                               # 16 Total Models (Production Ready)
+├── models/                               # 15 Total Models (Production Ready)
 │   ├── 🧹 staging/                          # Layer 1: Data Cleaning (7 Models)
 │   │   ├── stg_title_basics.sql                 # ✨ Title standardization & genre parsing
 │   │   ├── stg_name_basics.sql                  # 👤 Person data with profession arrays
@@ -103,13 +103,12 @@ dbt/                                          # 🎯 dbt Transformation Project
 │   │   ├── 📋 schema.yml                        # Model tests & documentation
 │   │   └── 🔗 sources.yml                       # Source definitions & freshness
 │   │
-│   ├── ⚙️ intermediate/                     # Layer 2: Business Logic (5 Models)
-│   │   ├── int_title_with_ratings.sql           # 🎯 Titles + ratings enrichment
-│   │   ├── int_title_with_genres.sql            # 🏷️ Genre dimension modeling
-│   │   ├── int_person_filmography.sql           # 📽️ Comprehensive career data
-│   │   ├── int_title_hierarchies.sql            # 🌳 Series-episode relationships
-│   │   ├── int_title_complete.sql               # 🔄 Fully denormalized titles
-│   │   └── 📋 schema.yml                        # Relationship tests & docs
+│   ├── intermediate/                         # Layer 2: Business Logic (4 Models)
+│   │   ├── int_title_with_genres.sql            # Genre dimension modeling
+│   │   ├── int_person_filmography.sql           # Comprehensive career analytics
+│   │   ├── int_title_hierarchies.sql            # Enhanced TV series analytics
+│   │   ├── int_title_complete.sql               # Fully denormalized titles
+│   │   └── schema.yml                           # Relationship tests & docs
 │   │
 │   └── 📊 marts/                            # Layer 3: Analytics Ready (4 Models)
 │       ├── mart_top_titles.sql                  # 🏆 Performance & ranking analytics
@@ -141,7 +140,7 @@ dbt/                                          # 🎯 dbt Transformation Project
     └── tests/                                  # Custom data tests
 ```
 
-## 📊 Data Sources
+## Data Sources
 
 Raw IMDb datasets are ingested via the **unified Airflow pipeline** and stored in PostgreSQL. All sources include automated freshness checks and data quality validation.
 
@@ -155,17 +154,17 @@ Raw IMDb datasets are ingested via the **unified Airflow pipeline** and stored i
 | **imdb_title_principals** | ~57M | `tconst`, `nconst`, `category`, `job` | 🎪 Complete cast & crew data |
 | **imdb_title_akas** | ~35M | `title_id`, `title`, `region`, `language` | 🌍 International titles & localization |
 
-### 🔄 Source Configuration Features
+### Source Configuration Features
 - **Automated Freshness**: Daily validation ensuring data is current
 - **Quality Gates**: Row count and essential field validation  
 - **Cosmos Integration**: Sources automatically trigger downstream transformations
 - **Performance Monitoring**: Load times and success rates tracked in Airflow
 
-## 🧹 Staging Models (Layer 1)
+## Staging Models (Layer 1)
 
 **Purpose**: Clean, standardize, and validate raw IMDb data while preserving granularity.
 
-### 🎬 `stg_title_basics` - Core Title Catalog
+### `stg_title_basics` - Core Title Catalog
 **Transforms**: 10M+ title records into standardized format
 - ✅ **Column Standardization**: `snake_case` naming convention
 - 🔄 **Data Type Casting**: `isAdult` → proper boolean, numeric fields → INTEGER
@@ -177,7 +176,7 @@ Raw IMDb datasets are ingested via the **unified Airflow pipeline** and stored i
 - 🚫 **Quality Filtering**: Removes records with NULL essential identifiers
 - 📊 **Output**: Clean foundation for all downstream title analysis
 
-### 👤 `stg_name_basics` - Person Registry  
+### `stg_name_basics` - Person Registry  
 **Transforms**: 13M+ person records with career data parsing
 - 🎯 **Profession Parsing**: Splits `primaryProfession` into structured career fields:
   ```sql
@@ -199,14 +198,14 @@ Raw IMDb datasets are ingested via the **unified Airflow pipeline** and stored i
 - 🔗 **Relationship Preservation**: Maintains title-to-person linkage integrity
 - 📈 **Scalability**: Handles complex multi-director/writer scenarios
 
-### 📺 `stg_title_episode` - TV Series Structure
+### `stg_title_episode` - TV Series Structure
 **Transforms**: 7.8M+ episode records with hierarchical relationships  
 - 🌳 **Hierarchy Mapping**: Links episodes to parent series via `parent_tconst`
 - 📊 **Season Organization**: Casts season/episode numbers to proper INTEGER
 - 🚫 **Data Validation**: Filters incomplete hierarchy records
 - 📈 **Series Analytics**: Enables season-level performance analysis
 
-### 🎪 `stg_title_principals` - Complete Cast & Crew
+### `stg_title_principals` - Complete Cast & Crew
 **Transforms**: 57M+ cast/crew records with role standardization
 - 🎯 **Role Categorization**: Standardizes `category` field (actor, director, etc.)
 - 🔢 **Ordering Preservation**: Maintains cast billing order via `ordering` field
@@ -220,23 +219,15 @@ Raw IMDb datasets are ingested via the **unified Airflow pipeline** and stored i
 - 🎯 **Quality Gates**: Filters ratings without valid title identifiers
 - 📈 **Popularity Metrics**: Prepares data for trending and recommendation analysis
 
-## ⚙️ Intermediate Models (Layer 2)
+## Intermediate Models (Layer 2)
 
 **Purpose**: Apply business logic, create relationships, and prepare enriched datasets for analytics.
 
-### 🎯 `int_title_with_ratings` - Enriched Title Performance
-**Combines**: Title metadata + user ratings for comprehensive title analysis
-- 📊 **Performance Metrics**: Joins titles with ratings to create unified view
-- 🎯 **Popularity Scoring**: Combines average ratings with vote volume for ranking
-- 🏆 **Quality Assessment**: Identifies high-quality content via rating thresholds
-- 📈 **Trend Analysis**: Enables time-based performance tracking
-- 🔄 **Full Coverage**: Preserves titles without ratings via LEFT JOIN strategy
-
-### 🏷️ `int_title_with_genres` - Genre Dimension Modeling
+### `int_title_with_genres` - Genre Dimension Modeling
 **Transforms**: Genre strings into dimensional attributes for analysis
-- 🎭 **Genre Vectorization**: Creates boolean flags for each genre category
-- 📊 **Multi-genre Support**: Handles titles spanning multiple genres
-- 🔍 **Genre Analytics**: Enables genre-based filtering and aggregation
+- **Genre Vectorization**: Creates boolean flags for each genre category
+- **Multi-genre Support**: Handles titles spanning multiple genres
+- **Genre Analytics**: Enables genre-based filtering and aggregation
 - 📈 **Trend Discovery**: Supports genre popularity analysis over time
 - 🎯 **Recommendation Engine**: Powers genre-based content suggestions
 
@@ -248,15 +239,43 @@ Raw IMDb datasets are ingested via the **unified Airflow pipeline** and stored i
 - 🏆 **Achievement Tracking**: Identifies career highlights and milestones
 - 📈 **Career Trends**: Enables longitudinal career performance analysis
 
-### 🌳 `int_title_hierarchies` - Series-Episode Relationships
-**Structures**: TV content hierarchy for series-level analytics
-- 📺 **Parent-Child Mapping**: Links episodes to parent series
-- 📊 **Season Organization**: Groups episodes by season for analysis
-- 🎯 **Series Metrics**: Enables series-wide performance calculation
-- 📈 **Episode Trends**: Tracks performance variation within series
-- 🔄 **Hierarchy Validation**: Ensures clean parent-child relationships
+### `int_title_hierarchies` - Enhanced TV Series Analytics
+**Advanced TV Content Analytics**: Comprehensive series and episode performance analysis with hierarchical relationships
 
-### 🔄 `int_title_complete` - Fully Denormalized Title Hub
+**Core Features:**
+- **Series-Episode Mapping**: Clean parent-child relationships between series and episodes
+- **Quality Analytics**: Episode ratings relative to series averages and consistency metrics
+- **Performance Classification**: Business-ready tiers (Premium Series, High Quality, etc.)
+- **Longevity Analysis**: Series duration and lifecycle stage classification
+- **Audience Engagement**: Voting patterns and engagement level categorization
+
+**Learning Showcase - Advanced Analytical Engineering:**
+```sql
+-- Business Logic Example: Series Performance Classification
+CASE 
+    WHEN sa.avg_series_rating >= 8.5 AND sa.total_episodes >= 20 THEN 'Premium Series'
+    WHEN sa.avg_series_rating >= 8.0 AND sa.total_episodes >= 10 THEN 'High Quality'
+    WHEN sa.avg_series_rating >= 7.5 THEN 'Good Series'
+    ELSE 'Average Series'
+END AS series_performance_tier
+
+-- Statistical Analysis: Episode Quality Relative to Series
+CASE 
+    WHEN episode_rating >= series_avg + 0.5 THEN 'Standout Episode'
+    WHEN episode_rating >= series_avg + 0.2 THEN 'Above Average'
+    WHEN episode_rating >= series_avg - 0.2 THEN 'Typical'
+    ELSE 'Below Average'
+END AS episode_quality_class
+```
+
+**Dashboard-Ready Dimensions:**
+- `series_longevity_class`: Long-Running, Established, Mid-Length, Short-Run, Limited Series
+- `series_performance_tier`: Premium, High Quality, Good, Average, Below Average
+- `episode_quality_class`: Standout, Above Average, Typical, Below Average, Poor
+- `audience_engagement_level`: High, Moderate, Low, Minimal Engagement
+- `series_consistency_class`: Very Consistent to Highly Variable
+
+### `int_title_complete` - Fully Denormalized Title Hub
 **Creates**: Complete title entity with all related information
 - 🎯 **Single Source**: Combines titles, ratings, genres, crew, and episodes
 - ⚡ **Query Performance**: Optimized for fast analytics queries
@@ -264,7 +283,7 @@ Raw IMDb datasets are ingested via the **unified Airflow pipeline** and stored i
 - 🔍 **Analytics Ready**: Eliminates need for complex joins in mart models
 - 🎬 **360° View**: Provides complete picture of each title's ecosystem
 
-## 📊 Marts (Layer 3) - Analytics-Ready Datasets
+## Marts (Layer 3) - Analytics-Ready Datasets
 
 **Purpose**: Production-ready aggregated models optimized for business intelligence and reporting.
 
@@ -324,7 +343,7 @@ FROM mart_genre_analytics;
 - 📈 **Predictive Insights**: Emerging genre trends and opportunities
 - 🎭 **Content Strategy**: Genre mix optimization for content creators
 
-### 📺 `mart_series_analytics` - TV Series & Episode Intelligence
+### `mart_series_analytics` - TV Series & Episode Intelligence
 **Analytics Focus**: Series performance, episode trends, and season analysis
 ```sql
 -- Series Intelligence Available:
@@ -343,7 +362,7 @@ FROM mart_series_analytics;
 - 🎯 **Audience Engagement**: Viewership retention and growth patterns
 - 📈 **Content Optimization**: Optimal series length and season planning
 
-## 🧪 Comprehensive Data Testing Framework
+## Comprehensive Data Testing Framework
 
 **Multi-layer validation** ensuring data quality and business logic integrity across all transformation stages.
 
@@ -368,7 +387,7 @@ tests:
     field: tconst                                       # Foreign key validation
 ```
 
-### 📊 Business Logic Tests
+### Business Logic Tests
 ```yaml
 # Domain-Specific Validation
 - dbt_utils.expression_is_true:
@@ -394,7 +413,7 @@ sources:
 - **Automated Execution**: Tests run after each layer completion in Airflow
 - **Failure Isolation**: Test failures don't block upstream layer success
 
-## ⚙️ Project Configuration & Optimization
+## Project Configuration & Optimization
 
 **Production-optimized** setup with intelligent materialization strategy and performance tuning.
 
@@ -444,7 +463,7 @@ packages:
     version: ">=0.8.0"
 ```
 
-### 🎯 Performance Optimizations
+### Performance Optimizations
 - **Incremental Models**: Large tables use incremental refresh strategies
 - **Smart Indexing**: Key columns indexed for fast joins and filtering
 - **Parallel Execution**: 4-thread configuration for optimal performance
@@ -506,12 +525,12 @@ dbt test --profiles-dir . --select marts.*
 #### **Individual Model Development**
 ```bash
 # Single model execution with dependencies
-dbt run --profiles-dir . --select +int_title_with_ratings+  # Upstream + model + downstream
-dbt run --profiles-dir . --select int_title_with_ratings    # Just the specific model
-dbt run --profiles-dir . --select +int_title_with_ratings   # Model + all dependencies
+dbt run --profiles-dir . --select +int_title_complete+     # Upstream + model + downstream
+dbt run --profiles-dir . --select int_title_complete       # Just the specific model
+dbt run --profiles-dir . --select +int_title_hierarchies   # Model + all dependencies
 ```
 
-### 📊 Documentation & Exploration
+### Documentation & Exploration
 
 #### **Interactive Documentation**
 ```bash
@@ -535,14 +554,14 @@ dbt ls --profiles-dir . --select mart_top_titles+          # All downstream depe
 dbt run-operation generate_model_yaml --args '{models: [stg_title_basics]}'
 ```
 
-### 🎯 Production Integration
+### Production Integration
 
 #### **Cosmos-Managed Execution** (Recommended)
 ```bash
 # Access Airflow UI
 open http://localhost:8080
 
-# Navigate to DAGs → imdb_cosmos_pipeline → Graph View
+# Navigate to DAGs → imdb_pipeline_v2 → Graph View
 # dbt models automatically converted to Airflow tasks with proper dependencies
 # Layer-based execution: staging → intermediate → marts
 # Real-time monitoring and error isolation
@@ -633,7 +652,7 @@ dbt run --profiles-dir . --exclude marts.*                          # Skip expen
 
 ## 🔮 Future Development & Roadmap
 
-### 🎯 Short-term Enhancements (Next Sprint)
+### Short-term Enhancements (Next Sprint)
 - **Advanced Analytics Models**:
   - `mart_collaboration_network` - Director-actor relationship analysis
   - `mart_franchise_analytics` - Movie series and sequel performance
@@ -684,7 +703,7 @@ dbt run --profiles-dir . --exclude marts.*                          # Skip expen
 - **[dbt Language Server](https://github.com/dbt-labs/dbt-language-server)** - Enhanced IDE support
 - **[dbt Packages Hub](https://hub.getdbt.com/)** - Community package repository
 
-### 📊 Analytics & Visualization
+### Analytics & Visualization
 - **PostgreSQL Integration**: Direct connection for BI tools (Grafana, Metabase, Tableau)
 - **Sample Queries**: Production-ready analytics examples included in documentation
 - **Performance Benchmarks**: Model execution metrics available in `target/run_results.json`

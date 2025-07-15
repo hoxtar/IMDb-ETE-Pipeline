@@ -2,49 +2,273 @@ version: 2
 
 models:
   - name: mart_top_titles
-    description: "Highly-rated titles with additional analytics on cast and crew"
+    description: "Title performance analytics for content strategy and discovery with advanced ranking algorithms and market segmentation"
     columns:
       - name: tconst
-        description: "Title identifier"
+        description: "Title identifier (primary key)"
         tests:
           - not_null
           - unique
-      - name: rating_rank_in_type
-        description: "Ranking within title type based on rating and vote count"
-      - name: rating_rank_in_genre
-        description: "Ranking within genre based on rating and vote count"
+      - name: title_type
+        description: "Type of title (movie, tvSeries, short, etc.)"
+      - name: primary_title
+        description: "Primary title name"
+      - name: start_year
+        description: "Release year"
+      - name: decade
+        description: "Decade classification for era analysis"
+      - name: runtime_minutes
+        description: "Runtime in minutes"
+      - name: primary_genre
+        description: "Primary genre classification"
+      - name: secondary_genre
+        description: "Secondary genre classification"
+      - name: average_rating
+        description: "Average IMDb user rating (1-10)"
+      - name: num_votes
+        description: "Number of user votes"
+      - name: weighted_score
+        description: "Confidence-adjusted rating score based on vote count"
+      - name: quality_percentile
+        description: "Percentile ranking based on rating (0-1)"
+      - name: popularity_percentile
+        description: "Percentile ranking based on vote count (0-1)"
+      - name: type_rank
+        description: "Ranking within title type based on weighted score"
+      - name: genre_rank
+        description: "Ranking within primary genre based on weighted score"
+      - name: decade_rank
+        description: "Ranking within decade based on weighted score"
+      - name: performance_tier
+        description: "Performance classification: Masterpiece, Blockbuster Hit, Critical Success, etc."
+      - name: popularity_segment
+        description: "Market reach classification: Mass Market, Broad Appeal, Niche Appeal, etc."
+      - name: investment_category
+        description: "Investment risk assessment: Premium, Strong, Solid, Moderate, High Risk"
+      - name: discovery_category
+        description: "Content discovery classification: Hidden Gem, Underrated, Well-Deserved Success, etc."
+      - name: longevity_indicator
+        description: "Content longevity assessment: Timeless Classic, Enduring Quality, Recent Hit, etc."
+      - name: is_adult
+        description: "Adult content flag"
+      - name: is_top_100_in_type
+        description: "Flag indicating top 100 ranking within title type"
+      - name: is_top_50_in_genre
+        description: "Flag indicating top 50 ranking within genre"
+      - name: is_top_25_in_decade
+        description: "Flag indicating top 25 ranking within decade"
+      - name: is_premium_content
+        description: "Flag indicating premium performance tier (Masterpiece, Blockbuster Hit, Critical Success)"
 
   - name: mart_genre_analytics
-    description: "Genre performance trends across different decades"
+    description: "Genre market intelligence with trends, investment insights, and competitive analysis"
     columns:
       - name: genre
-        description: "Genre name"
+        description: "Genre name (primary key)"
         tests:
           - not_null
           - unique
+      - name: total_titles
+        description: "Total number of titles in the genre"
       - name: avg_rating
-        description: "Average rating across all titles in the genre"
-      - name: high_rated_count
-        description: "Count of titles with rating >= 8.0 and >5000 votes"
+        description: "Average rating across all genre titles"
+      - name: median_rating
+        description: "Median rating for statistical balance"
+      - name: rating_consistency
+        description: "Standard deviation of ratings (lower = more consistent)"
+      - name: avg_audience_size
+        description: "Average number of votes per title"
+      - name: total_audience_reach
+        description: "Total cumulative votes across all genre titles"
+      - name: market_share
+        description: "Genre's share of total title volume (0-1)"
+      - name: audience_share
+        description: "Genre's share of total audience engagement (0-1)"
+      - name: titles_1950s
+        description: "Number of titles produced in 1950s"
+      - name: titles_1960s
+        description: "Number of titles produced in 1960s"
+      - name: titles_1970s
+        description: "Number of titles produced in 1970s"
+      - name: titles_1980s
+        description: "Number of titles produced in 1980s"
+      - name: titles_1990s
+        description: "Number of titles produced in 1990s"
+      - name: titles_2000s
+        description: "Number of titles produced in 2000s"
+      - name: titles_2010s
+        description: "Number of titles produced in 2010s"
+      - name: titles_2020s
+        description: "Number of titles produced in 2020s"
+      - name: avg_rating_1990s
+        description: "Average rating for 1990s titles"
+      - name: avg_rating_2000s
+        description: "Average rating for 2000s titles"
+      - name: avg_rating_2010s
+        description: "Average rating for 2010s titles"
+      - name: avg_rating_2020s
+        description: "Average rating for 2020s titles"
+      - name: movie_count
+        description: "Number of movies in the genre"
+      - name: tv_series_count
+        description: "Number of TV series in the genre"
+      - name: tv_movie_count
+        description: "Number of TV movies in the genre"
+      - name: premium_titles
+        description: "Count of high-quality titles (rating ≥8.0, votes ≥10k)"
+      - name: blockbuster_titles
+        description: "Count of popular titles (votes ≥100k)"
+      - name: production_trend
+        description: "Production volume trend: Growing, Stable, Declining, Rapidly Declining"
+      - name: quality_trend
+        description: "Quality evolution trend: Quality Improving, Quality Stable, Quality Declining, Quality Crisis"
+      - name: market_position
+        description: "Market position classification: Dominant, Major, Established, Niche, Specialty Genre"
+      - name: investment_priority
+        description: "Investment recommendation: High Priority, Medium Priority, Emerging Opportunity, etc."
+      - name: content_strategy
+        description: "Recommended content strategy: Premium Focus, Blockbuster Potential, Mass Appeal, etc."
+      - name: platform_fit
+        description: "Platform suitability: TV Platform, Cinema Platform, Multi-Platform Suitable"
+      - name: is_investment_target
+        description: "Flag indicating high/medium investment priority"
+      - name: is_growth_opportunity
+        description: "Flag indicating growing production with stable/improving quality"
+      - name: is_core_market
+        description: "Flag indicating dominant or major market position"
 
   - name: mart_person_career
-    description: "Career analysis for actors, directors, and other film professionals"
+    description: "Person career analytics for talent analysis, career insights, and industry benchmarking"
     columns:
       - name: nconst
-        description: "Person identifier"
+        description: "Person identifier (primary key)"
         tests:
           - not_null
           - unique
+      - name: person_name
+        description: "Person's primary name"
+      - name: career_start_year
+        description: "First recorded work year"
+      - name: latest_work_year
+        description: "Most recent work year"
       - name: career_span_years
-        description: "Number of years between first and last known work"
+        description: "Total years between first and latest work"
+      - name: total_credits
+        description: "Total number of credited works"
+      - name: active_years
+        description: "Number of distinct years with credited work"
+      - name: avg_credits_per_year
+        description: "Average credits per active year"
+      - name: actor_credits
+        description: "Number of acting credits"
+      - name: director_credits
+        description: "Number of directing credits"
+      - name: writer_credits
+        description: "Number of writing credits"
+      - name: producer_credits
+        description: "Number of producing credits"
+      - name: avg_project_rating
+        description: "Average rating across all credited works"
+      - name: highest_rated_work
+        description: "Highest rating achieved on any work"
+      - name: total_audience_reach
+        description: "Total cumulative votes across all works"
+      - name: works_2020s
+        description: "Number of works in 2020s"
+      - name: works_2010s
+        description: "Number of works in 2010s"
+      - name: works_2000s
+        description: "Number of works in 2000s"
+      - name: works_1990s
+        description: "Number of works in 1990s"
+      - name: high_quality_works
+        description: "Number of high-quality works"
+      - name: good_quality_works
+        description: "Number of good-quality works"
+      - name: career_stage
+        description: "Career classification: Veteran, Established, Experienced, Mid-Career, Emerging"
+      - name: productivity_tier
+        description: "Productivity classification: Highly Prolific, Very Active, Active, Moderate, Limited Activity"
+      - name: dominant_role
+        description: "Primary profession: Actor, Director, Writer, Producer, Other"
+      - name: versatility_level
+        description: "Role diversity: Multi-Talented, Dual-Role, Specialist"
+      - name: quality_reputation
+        description: "Quality track record: Quality Specialist, Consistent Quality, Good Track Record, etc."
+      - name: activity_pattern
+        description: "Era activity pattern: Current Era Active, Peak 2010s, Peak 2000s, Legacy Era, Varied Activity"
 
   - name: mart_series_analytics
-    description: "TV series analysis including episode ratings and trends"
+    description: "TV series-specific analytics for entertainment industry insights and series development decisions"
     columns:
       - name: series_tconst
-        description: "Series identifier"
+        description: "Series identifier (primary key)"
         tests:
           - not_null
           - unique
-      - name: rating_trend
-        description: "Whether series ratings are improving, declining, or stable over seasons"
+      - name: series_title
+        description: "Series title name"
+      - name: series_start_year
+        description: "Series first episode year"
+      - name: series_end_year
+        description: "Series final episode year"
+      - name: series_duration_years
+        description: "Total years series was active"
+      - name: total_episodes
+        description: "Total number of episodes"
+      - name: total_seasons
+        description: "Total number of seasons"
+      - name: avg_episodes_per_season
+        description: "Average episodes per season"
+      - name: avg_series_rating
+        description: "Average rating across all episodes"
+      - name: rating_consistency
+        description: "Standard deviation of episode ratings"
+      - name: lowest_episode_rating
+        description: "Lowest-rated episode rating"
+      - name: highest_episode_rating
+        description: "Highest-rated episode rating"
+      - name: avg_episode_votes
+        description: "Average votes per episode"
+      - name: total_series_votes
+        description: "Total cumulative votes across all episodes"
+      - name: final_season
+        description: "Final season number"
+      - name: excellent_episodes
+        description: "Count of episodes with rating ≥8.0"
+      - name: poor_episodes
+        description: "Count of episodes with rating ≤6.0"
+      - name: longevity_class
+        description: "Series longevity: Generational, Long-Running, Established, Multi-Season, Short-Run"
+      - name: series_performance_tier
+        description: "Performance classification: Premium Franchise, Quality Series, Strong Series, etc."
+      - name: consistency_rating
+        description: "Quality consistency: Very Consistent, Consistent, Moderately Variable, etc."
+      - name: quality_pattern
+        description: "Quality distribution: Excellence Driven, Quality Focused, Consistent Quality, etc."
+      - name: production_scale
+        description: "Production size: Epic Scale, Large Scale, Medium Scale, Standard Scale, Limited Scale"
+      - name: engagement_level
+        description: "Audience engagement: High, Strong, Moderate, Limited, Minimal Engagement"
+      - name: is_premium_series
+        description: "Flag indicating premium franchise or quality series tier"
+      - name: is_consistent_quality
+        description: "Flag indicating very consistent or consistent quality rating"
+      - name: is_long_running
+        description: "Flag indicating generational or long-running longevity class"
+      - name: avg_votes
+        description: "Average number of votes per title"
+      - name: market_penetration_score
+        description: "Combined metric of volume and audience engagement"
+      - name: quality_consistency_score
+        description: "Measure of rating consistency within the genre"
+      - name: high_rated_count
+        description: "Count of titles with rating >= 8.0 and >5000 votes"
+      - name: commercial_hits_count
+        description: "Count of titles with high rating and vote combinations"
+      - name: market_position
+        description: "Genre classification: Premium, Mass Market, or Niche"
+      - name: investment_attractiveness
+        description: "Business recommendation for investment priority"
+      - name: trend_direction
+        description: "Whether genre performance is improving or declining"

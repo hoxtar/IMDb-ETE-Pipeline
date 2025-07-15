@@ -11,3 +11,15 @@ airflow.cfg
 airflow.db
 imdb_data/
 IMDb Analytics dbt Project - Data Stra.md
+
+# Documentation files (internal use only - do not commit)
+REFACTOR_LOG.md
+PROJECT_CONTEXT_PROMPT.md
+FINAL_AUDIT_SUMMARY.md
+TECHNICAL_INTERVIEW_PREP.md
+MARTS_TRANSFORMATIONS.md
+INTERMEDIATE_TRANSFORMATIONS.md
+STAGING_TRANSFORMATIONS.md
+
+# Old files and backups
+old_files/

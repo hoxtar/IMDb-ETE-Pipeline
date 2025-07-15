@@ -1,37 +1,6 @@
 version: 2
 
 models:
-  - name: int_title_with_ratings
-    description: "Combined info from stg_title_basics and stg_title_ratings"
-    columns:
-      - name: tconst
-        description: "Unique identifier for the title"
-        tests:
-          - not_null
-      - name: title_type
-        tests:
-          - accepted_values:
-              values: ['movie', 'short', 'tvEpisode', 'tvMovie', 'tvSeries', 'tvMiniSeries', 'tvSpecial', 'tvShort', 'video', 'videoGame']
-      - name: primary_title
-      - name: runtime_minutes
-      - name: primary_genre
-      - name: secondary_genre
-      - name: third_genre
-      - name: is_adult
-      - name: start_year
-        tests:
-          - dbt_utils.accepted_range:
-              min_value: 1850
-              max_value: 2030
-      - name: average_rating
-        tests:
-          - not_null
-          - dbt_utils.accepted_range:
-              min_value: 0
-              max_value: 10
-              inclusive: true
-      - name: num_votes
-
   - name: int_title_with_genres
     description: "Normalized genre data from title_basics"
     columns:
@@ -54,35 +23,55 @@ models:
             - genre
 
   - name: int_person_filmography
-    description: "Comprehensive filmography combining all roles a person has"
+    description: "Person-title relationships with business logic and enrichment - foundation for career analytics"
     columns:
-      - name: tconst
-        description: "Title identifier"
-        tests:
-          - not_null
       - name: nconst
         description: "Person identifier"
         tests:
           - not_null
-      - name: role
-        description: "Role/category (actor, director, writer, etc.)"
+      - name: person_name
+        description: "Primary name of the person"
         tests:
           - not_null
-          - accepted_values:
-              values: ['actor', 'actress', 'director', 'writer', 'producer']
-      - name: characters
-        description: "Character name if applicable"
-      - name: title
-        description: "Title of the work"
+      - name: tconst
+        description: "Title identifier"
+        tests:
+          - not_null
+      - name: primary_title
+        description: "Title name"
+      - name: role
+        description: "Person's role in the title (actor, director, writer, etc.)"
+        tests:
+          - not_null
       - name: start_year
-        description: "Release year"
-      - name: primary_genre
-        description: "Primary genre of the work"
-      - name: person_name
-        description: "Name of the person"
+        description: "Title release year"
+      - name: title_type
+        description: "Type of title (movie, tvSeries, etc.)"
+      - name: average_rating
+        description: "IMDb rating for the title"
+      - name: num_votes
+        description: "Number of votes for the title"
+      - name: work_decade
+        description: "Decade classification of the work"
+        tests:
+          - accepted_values:
+              values: ['2020s', '2010s', '2000s', '1990s', 'Legacy']
+      - name: work_quality_tier
+        description: "Quality classification based on rating"
+        tests:
+          - accepted_values:
+              values: ['High Quality', 'Good Quality', 'Average Quality', 'Below Average', 'Unrated']
+    tests:
+      - relationships:
+          to: ref('stg_name_basics')
+          field: nconst
+      - relationships:
+          to: ref('stg_title_basics')
+          field: tconst
+          column_name: tconst
 
   - name: int_title_hierarchies
-    description: "TV series and their episodes relationships"
+    description: "Enhanced TV series analytics with hierarchical relationships and quality metrics"
     columns:
       - name: episode_tconst
         description: "Episode identifier"
@@ -107,6 +96,54 @@ models:
         description: "Series start year"
       - name: series_end_year
         description: "Series end year"
+      - name: episode_rating
+        description: "Individual episode rating"
+      - name: episode_votes
+        description: "Number of votes for the episode"
+      - name: series_duration_years
+        description: "Total duration of the series in years"
+      - name: total_episodes
+        description: "Total number of episodes in the series"
+      - name: total_seasons
+        description: "Total number of seasons in the series"
+      - name: avg_series_rating
+        description: "Average rating across all series episodes"
+      - name: rating_consistency
+        description: "Standard deviation of episode ratings (consistency measure)"
+      - name: highest_episode_rating
+        description: "Highest rated episode in the series"
+      - name: lowest_episode_rating
+        description: "Lowest rated episode in the series"
+      - name: series_longevity_class
+        description: "Classification based on series duration (Long-Running, Established, etc.)"
+        tests:
+          - accepted_values:
+              values: ['Long-Running (15+ years)', 'Established (10-14 years)', 'Mid-Length (5-9 years)', 'Short-Run (3-4 years)', 'Limited Series (1-2 years)']
+      - name: series_performance_tier
+        description: "Quality tier based on rating and episode count"
+        tests:
+          - accepted_values:
+              values: ['Premium Series', 'High Quality', 'Good Series', 'Average Series', 'Below Average', 'Unrated']
+      - name: episode_quality_class
+        description: "Episode quality relative to series average"
+        tests:
+          - accepted_values:
+              values: ['Standout Episode', 'Above Average', 'Typical', 'Below Average', 'Poor Episode', 'Unrated']
+      - name: season_position
+        description: "Position classification within series lifecycle"
+        tests:
+          - accepted_values:
+              values: ['Premiere Season', 'Latest Season', 'Early Seasons', 'Recent Seasons', 'Middle Seasons']
+      - name: series_consistency_class
+        description: "Consistency of episode quality across series"
+        tests:
+          - accepted_values:
+              values: ['Very Consistent', 'Consistent', 'Moderately Variable', 'Variable', 'Highly Variable']
+      - name: audience_engagement_level
+        description: "Level of audience engagement based on voting patterns"
+        tests:
+          - accepted_values:
+              values: ['High Engagement', 'Moderate Engagement', 'Low Engagement', 'Minimal Engagement', 'No Engagement Data']
     tests:
       - relationships:
           to: ref('stg_title_basics')
@@ -114,7 +151,7 @@ models:
           column_name: episode_tconst  # Specify which column to check
 
   - name: int_title_complete
-    description: "Comprehensive title information with ratings and contributor counts"
+    description: "Comprehensive title information with ratings, business logic classifications, and calculated dimensions"
     columns:
       - name: tconst
         description: "Title identifier"
@@ -122,24 +159,56 @@ models:
           - not_null
           - unique
       - name: title_type
+        description: "Type of title (movie, tvSeries, etc.)"
       - name: primary_title
+        description: "Primary title name"
       - name: original_title
+        description: "Original title name"
       - name: is_adult
+        description: "Adult content flag"
       - name: start_year
+        description: "Release year"
       - name: end_year
+        description: "End year (for series)"
       - name: runtime_minutes
+        description: "Runtime in minutes"
       - name: primary_genre
+        description: "Primary genre"
       - name: secondary_genre
+        description: "Secondary genre"
       - name: third_genre
+        description: "Third genre"
       - name: average_rating
+        description: "Average IMDb rating"
       - name: num_votes
-      - name: director_count
-        description: "Number of directors for the title"
-      - name: writer_count
-        description: "Number of writers for the title"
-      - name: cast_count
-        description: "Number of cast members for the title"
+        description: "Number of votes"
+      - name: decade
+        description: "Decade classification for era analysis"
         tests:
-        - dbt_utils.at_least_one:
-            column_name: "tconst"  # Add the missing column_name parameter
-            severity: warn  # Make this a warning instead of error
+          - accepted_values:
+              values: ['2020s', '2010s', '2000s', '1990s', '1980s', '1970s', '1960s', 'Old Classic']
+      - name: quality_tier
+        description: "Quality classification based on rating and vote analysis"
+        tests:
+          - accepted_values:
+              values: ['Hidden Gem', 'Acclaimed', 'Solid', 'Watchable', 'Weak', 'Low rated']
+      - name: popularity_tier
+        description: "Popularity classification based on vote percentiles"
+        tests:
+          - accepted_values:
+              values: ['Unknown', 'Bottom 10%', 'Bottom 20%', 'Bottom 30%', 'Bottom 40%', 'Bottom 50%', 'Top 50–40%', 'Top 40–30%', 'Top 30–20%', 'Top 20–10%', 'Top 10%']
+      - name: runtime_category
+        description: "Runtime classification"
+        tests:
+          - accepted_values:
+              values: ['Unknown', 'Short', 'Standard', 'Long', 'Epic']
+      - name: is_blockbuster_genre
+        description: "Flag for blockbuster-potential genres"
+      - name: has_ratings
+        description: "Flag indicating if title has ratings"
+      - name: has_reliable_votes
+        description: "Flag for titles with 500+ votes"
+      - name: has_high_votes
+        description: "Flag for titles with 1000+ votes"
+      - name: loaded_at
+        description: "Timestamp when record was loaded"

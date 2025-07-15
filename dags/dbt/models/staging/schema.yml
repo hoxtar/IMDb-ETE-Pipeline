@@ -177,6 +177,6 @@ models:
         tests:
           - dbt_utils.accepted_range:
               min_value: 1
-              max_value: 50000
+              max_value: 5000 
               where: "episode_number IS NOT NULL"
               severity: warn  # WARNING - special numbering exists
